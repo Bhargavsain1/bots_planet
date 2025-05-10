@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser'
 
 import connectToDB from './config/dbConfig.js'
 import authRoutes from './routes/authRoutes.js'
+import botRoutes from './routes/botRoutes.js'
 import { verifyToken } from './middleware/auth.js'
 
 const app = express()
@@ -19,6 +20,7 @@ app.use(cookieParser())
 
 // routes
 app.use('/api/auth', authRoutes)
+app.use('/api/bots', botRoutes)
 
 app.listen(PORT, (err) => {
     if (err) {
