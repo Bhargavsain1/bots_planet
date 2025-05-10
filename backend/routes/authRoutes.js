@@ -3,50 +3,83 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { verifyToken } from '../middleware/auth.js';
 
+import User from './../models/UserModel.js'
+import Customer from './../models/CustomerModel.js'
+
+
 const router = express.Router();
 
-// In-memory user storage (replace with database in production)
-const users = [];
+const generateId = (prefix) => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let id = prefix + "-"
 
-router.get('/printUsers', (req, res) => {
-  console.log(users);
-  res.json(users);
-})
+  for (let i = 0; i < 4; i++) {
+    id += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+
+  return id
+}
 
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res) => {  
   try {
-    const { name, email, password } = req.body;
+    const {
+      orgName,
+      industry,
+      orgSize,
+      location,
+      adminName,
+      adminEmail,
+      password
+    } = req.body;
 
     // Check if user exists
-    if (users.find(user => user.email === email)) {
+    if (await User.exists({ email: adminEmail })) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-
-    // Create user
-    const user = {
-      id: users.length + 1,
-      name,
-      email,
+    
+    let id = ''
+    do {
+      id = generateId('CUST')
+    } while (await User.exists({ customerId: id }))
+      // Create customer
+      const customer = {
+        customerId: id,
+        orgName,
+        industry,
+        orgSize,
+        location
+      };
+      
+    do {
+      id = generateId('ADM')
+    } while (await User.exists({ userId: id }))
+    // Create admin
+    const admin = {
+      userId: id,
+      customerId: customer.customerId,
+      name: adminName,
+      email: adminEmail,
       password: hashedPassword,
-      avatar: `https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=150`
-    };
+      role: 'admin'
+    }
 
-    users.push(user);
+    await new User(admin).save();
+    await new Customer(customer).save();
 
     // Create token
     const token = jwt.sign(
-      { id: user.id },
+      { id: admin.userId },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1d' }
     );
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = admin;
 
     res.cookie('token', token, {
       httpOnly: true,
@@ -57,12 +90,12 @@ router.post('/register', async (req, res) => {
 
     res.status(201).json({
       message: 'User registered successfully',
+      customer,
       user: userWithoutPassword
     });
-
-    console.log("registration successful", user);
     
   } catch (error) {
+    console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -73,9 +106,9 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = users.find(user => user.email === email);
+    const user = await User.findOne({ email })
     if (!user) {
-        console.log("No user")
+      console.log("No user")
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -88,7 +121,7 @@ router.post('/login', async (req, res) => {
 
     // Create token
     const token = jwt.sign(
-      { id: user.id },
+      { id: user.userId },
       process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '1d' }
     );
@@ -107,8 +140,6 @@ router.post('/login', async (req, res) => {
       message: 'Logged in successfully',
       user: userWithoutPassword
     });
-
-    console.log("Login successful", user);
     
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -119,17 +150,6 @@ router.post('/login', async (req, res) => {
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ message: 'Logged out successfully' });
-});
-
-// Get current user
-router.get('/me', verifyToken, (req, res) => {
-  const user = users.find(user => user.id === req.user.id);
-  if (!user) {
-    return res.status(404).json({ message: 'User not found' });
-  }
-
-  const { password, ...userWithoutPassword } = user;
-  res.json(userWithoutPassword);
 });
 
 export default router;

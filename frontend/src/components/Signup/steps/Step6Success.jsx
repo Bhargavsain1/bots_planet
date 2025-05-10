@@ -16,15 +16,19 @@ const Step6Success = ({ data }) => {
     const completeSignup = async () => {
       try {
         const registrationData = {
-          name: data.adminName,
-          email: data.corporateEmail,
+          adminName: data.adminName,
+          orgName: data.orgName,
+          industry: data.industry,
+          orgSize: data.companySize,
+          location: data.location,
+          adminEmail: data.corporateEmail,
           password: data.password
         }
         
         await axios.post('http://localhost:5000/api/auth/register', registrationData)
 
         // Log the user in
-        await login(registrationData.email, registrationData.password);
+        await login(registrationData.adminEmail, registrationData.password);
         
         // Redirect to dashboard
         navigate('/dashboard');
