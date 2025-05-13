@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }) => {
         password
       })
   
-      console.log("Call made")
       const {user: loggedInUser} = response.data;
 
       console.log("User logged in", loggedInUser)
