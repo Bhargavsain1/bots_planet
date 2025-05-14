@@ -8,6 +8,7 @@ import botRoutes from './routes/botRoutes.js';
 import customerSegmentRoutes from './routes/customerSegmentRoutes.js'; // Correct import
 import { verifyToken } from './middleware/auth.js';
 
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

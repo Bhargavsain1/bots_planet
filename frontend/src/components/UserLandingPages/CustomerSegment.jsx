@@ -70,21 +70,13 @@ const CustomerSegment = () => {
       documents,
     };
 
-    try {
-      if (editIndex !== null) {
-        // Update existing segment
-        const updated = [...segments];
-        updated[editIndex] = newSegment;
-        setSegments(updated);
-        setEditIndex(null);
-      } else {
-        // Save new segment to backend
-        const response = await axios.post('http://localhost:5000/api/customer-segments', newSegment);
-        console.log('Segment saved:', response.data);
+    console.log('Sending data to backend:', newSegment); // Log the data being sent
 
-        // Add the saved segment to the local state
-        setSegments([...segments, response.data]);
-      }
+    try {
+      const response = await axios.post('http://localhost:5000/api/customer-segments', newSegment);
+      console.log('Segment saved:', response.data);
+
+      setSegments([...segments, response.data]);
 
       // Clear form
       setSegmentationName('');
