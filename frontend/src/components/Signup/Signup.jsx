@@ -5,6 +5,7 @@ import Step2AdminProfile from "./steps/Step2AdminProfile";
 import Step3SelectBots from "./steps/Step3SelectBots";
 import Step4Preview from "./steps/Step4Preview";
 import Step5Success from "./steps/Step5Success";
+import { useSnackbar } from '../../context/SnackbarContext';
 
 const steps = [
   "Register Organization",
@@ -17,10 +18,14 @@ const steps = [
 const Signup = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({});
+  const { showSnackbar } = useSnackbar();
 
   const handleNext = async (data) => {
     let newData = { ...formData, ...data };
     setFormData(newData);
+    if (activeStep === 3) {
+      showSnackbar('Registration completed successfully!', 'success', 3000);
+    }
     setActiveStep((prev) => prev + 1);
   };
 

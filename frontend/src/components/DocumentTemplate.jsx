@@ -17,6 +17,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import { useSnackbar } from '../context/SnackbarContext';
 
 const DocumentTemplate = () => {
   const [documentFields, setDocumentFields] = useState([]); 
@@ -41,6 +42,7 @@ const DocumentTemplate = () => {
 
   const [docNames, setDocNames] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
+  const { showSnackbar } = useSnackbar();
  
   // Function to fetch existing document fields (after submission)
   const fetchDocumentFields = async (docName) => {
@@ -154,18 +156,18 @@ const DocumentTemplate = () => {
     });
 
     if (invalidRows.length > 0) {
-      setError(
-        `Please fill all required fields in new row(s): ${invalidRows.join(
-          ", "
-        )}.`
-      );
+      //setError(
+        //`Please fill all required fields in new row(s): ${invalidRows.join(", ")}.`
+      //);
       setSuccessMessage("");
+      showSnackbar(`Please fill all required fields in new row(s): ${invalidRows.join(", ")}.`, 'error', 3000);
       return;
     }
 
     if (validNewRows.length === 0) {
-      setError("No new valid rows to submit. Please fill the fields to add.");
+     // setError("No new valid rows to submit. Please fill the fields to add.");
       setSuccessMessage("");
+      showSnackbar('No new valid rows to submit. Please fill the fields to add.', 'error', 3000);
       return;
     }
 
@@ -191,6 +193,7 @@ const DocumentTemplate = () => {
       console.log("Submission successful:", result);
 
       setSuccessMessage("Document fields submitted successfully!");
+      showSnackbar('Document fields submitted successfully!', 'success', 3000);
       setNewRows([
         {
           documentName: selectedDocument,
@@ -211,6 +214,7 @@ const DocumentTemplate = () => {
       console.error("Error submitting document fields:", apiError);
       setError("Failed to submit document fields. Please try again.");
       setSuccessMessage("");
+      showSnackbar('Failed to submit document fields.', 'error', 3000);
     }
   };
 
@@ -261,7 +265,7 @@ const DocumentTemplate = () => {
         }}
       >
         <Typography variant="h6">Existing Document Fields</Typography>
-        <Button variant="contained" onClick={addNewBlankRow}>
+        <Button variant="contained" onClick={addNewBlankRow} sx={{ borderRadius: '16px', px: 3, py: 1.2 }}>
           Add New Blank Row
         </Button>
       </Box>
@@ -480,7 +484,7 @@ const DocumentTemplate = () => {
           alignItems: "center",
         }}
       >
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button variant="contained" onClick={handleSubmit} sx={{ borderRadius: '16px', px: 3, py: 1.2 }}>
           Submit
         </Button>
       </Box>

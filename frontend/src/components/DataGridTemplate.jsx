@@ -15,6 +15,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import axios from "axios";
+import { useSnackbar } from '../context/SnackbarContext';
 
 // Helper function to capitalize the first letter of a string
 const capitalize = (s) => {
@@ -45,6 +46,7 @@ const DataGridTemplate = ({
   const [isSubmitting, setIsSubmitting] = useState(false); // State for loading indicator while submitting new data
   // State to store the field definitions fetched from the API
   const [fieldDefinitions, setFieldDefinitions] = useState([]);
+  const { showSnackbar } = useSnackbar();
 
   // --- Effect to fetch existing data and field definitions on component mount ---
   useEffect(() => {
@@ -153,6 +155,7 @@ const DataGridTemplate = ({
               }.`
             );
             setIsSubmitting(false);
+            showSnackbar(`Please fill all required (updatable) fields in new row ${tableData.length + i + 1}.`, 'error', 3000);
             return;
           }
         }
@@ -162,10 +165,11 @@ const DataGridTemplate = ({
 
     // Check if there's any data to submit
     if (newRowsToSubmit.length === 0) {
-      setError(
-        "No new data to submit. Please add some data in the blank rows."
-      );
+     // setError(
+       // "No new data to submit. Please add some data in the blank rows."
+      //);
       setIsSubmitting(false);
+      showSnackbar('No new data to submit. Please add some data in the blank rows.', 'error', 3000);
       return;
     }
 
@@ -175,7 +179,7 @@ const DataGridTemplate = ({
       const response = await axios.post(postApiUrl, newRowsToSubmit);
       console.log("API response (new data):", response.data);
 
-      alert("New data submitted successfully!");
+      showSnackbar('New data submitted successfully!', 'success', 3000);
 
       // Clear newRows and re-fetch existing data to show updates
       setNewRows([]);
@@ -201,6 +205,7 @@ const DataGridTemplate = ({
           apiError.response?.data?.message || apiError.message
         }`
       );
+      showSnackbar(`Submission failed: ${apiError.response?.data?.message || apiError.message}`, 'error', 3000);
     } finally {
       setIsSubmitting(false);
     }
@@ -219,7 +224,7 @@ const DataGridTemplate = ({
         <Typography variant="h6">
           Existing {title.split(" ")[1] || "Records"}
         </Typography>
-        <Button variant="contained" onClick={addNewBlankRow}>
+        <Button variant="contained" onClick={addNewBlankRow} sx={{ borderRadius: '16px', px: 3, py: 1.2 }}>
           Add New Row
         </Button>
       </Box>
@@ -422,6 +427,7 @@ const DataGridTemplate = ({
           color="primary"
           onClick={handleSubmit}
           disabled={isSubmitting}
+          sx={{ borderRadius: '16px', px: 3, py: 1.2 }}
         >
           {isSubmitting ? (
             <CircularProgress size={24} color="inherit" />
