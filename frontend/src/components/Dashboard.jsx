@@ -11,6 +11,8 @@ import {
   Button,
 } from "@mui/material";
 import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import Modules from "./Modules";
 import Documents from "./Documents";
@@ -44,6 +46,9 @@ const Dashboard = () => {
 
   // State for active sub-component
   const [activeSubComponent, setActiveSubComponent] = useState(null);
+
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getModules = async () => {
@@ -84,7 +89,7 @@ const Dashboard = () => {
       setActiveSubComponent(null);
       try {
         const data = await axios.get(
-          `http://localhost:5000/api/function_area/${moduleId}`
+          `http://localhost:5000/api/functional_area/${moduleId}`
         );
         console.log("data in subbitem", data);
         setSubItems(data.data);
@@ -133,6 +138,11 @@ const Dashboard = () => {
     setActiveSubComponent(itemName);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <Box sx={{ display: "flex" }}>
       <CssBaseline />
@@ -164,7 +174,7 @@ const Dashboard = () => {
             <IconButton>
               <SettingsIcon sx={{ color: "darkblue" }} />
             </IconButton>
-            <IconButton>
+            <IconButton onClick={handleLogout}>
               <LogoutIcon sx={{ color: "darkblue" }} />
             </IconButton>
           </Box>

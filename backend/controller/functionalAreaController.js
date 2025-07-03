@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const functionalAreaSchema = require("../models/functionalAreaSchema");
 const documentSchema = require("../models/DocumentSchema");
-
+ 
 exports.getFuntinalAreaDetails = async (req, res) => {
   try {
     const functionalAreas = await functionalAreaSchema.find({
@@ -12,28 +12,17 @@ exports.getFuntinalAreaDetails = async (req, res) => {
         .status(404)
         .send(`There are no record with moduleId ${req.params.id}`);
     }
-
+ 
     res.status(200).send(functionalAreas);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.getAllFunctionAreas = async (req, res) => {
   try {
-    const functionalAreas = await functionalAreaSchema.find(
-      {},
-      {
-        created_at: 0,
-        updated_at: 0,
-        created_by: 0,
-        updated_by: 0,
-        _id: 0,
-        __v: 0,
-        faId: 0,
-      }
-    );
+    const functionalAreas = await functionalAreaSchema.find({});
     if (!functionalAreas.length) {
       res.status(404).send(`There are no record `);
     }
@@ -58,35 +47,35 @@ exports.saveFunctionArea = async (req, res) => {
     res.status(500).send("Internal server error");
   }
 };
-
+ 
 exports.getEachFuntinalAreaDetails = async (req, res) => {
   try {
     const { faId } = req.params;
-
+ 
     if (isNaN(faId)) {
       return res.status(400).json({ error: "Invalid faId. Must be a number." });
     }
-
+ 
     const eachFunctionItems = await documentSchema.find({
       faId: parseInt(faId),
     });
     if (!eachFunctionItems) {
       res.status(404).send("There are no records");
     }
-
+ 
     res.status(200).send(eachFunctionItems);
   } catch (err) {
     console.log(err);
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
+ 
 exports.schemaDeatils = async (req, res) => {
   try {
     let collectionName = req.params.collectionName;
     console.log("collectionName", collectionName);
     let targetModel = null;
-
+ 
     // Iterate through all registered Mongoose models
     for (const modelName in mongoose.models) {
       const Model = mongoose.models[modelName];
@@ -97,18 +86,18 @@ exports.schemaDeatils = async (req, res) => {
         break;
       }
     }
-
+ 
     if (targetModel) {
       console.log(`\n--- Schema for Collection: "${collectionName}" ---`);
       const schemaPaths = targetModel.schema.paths;
-
+ 
       for (const pathName in schemaPaths) {
         if (schemaPaths.hasOwnProperty(pathName)) {
           const schemaType = schemaPaths[pathName];
           const typeInstance = schemaType.caster // For arrays
             ? `Array of ${schemaType.caster.instance}`
             : schemaType.instance;
-
+ 
           // Exclude virtuals and methods if you only want actual fields
           console.log(`  Field Name: ${pathName}, Field Type: ${typeInstance}`);
         }
@@ -133,3 +122,29 @@ exports.schemaDeatils = async (req, res) => {
     console.log("MongoDB disconnected.");
   }
 };
+ 
+exports.updateFunctionArea = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const functionalAreaData = req.body;
+ 
+    let updatedFunctionalArea = await functionalAreaSchema.findByIdAndUpdate(
+      { _id: id },
+      {
+        $set: functionalAreaData,
+      },
+      { new: true, runValidators: true, omitUndefined: true }
+    );
+    if (!updatedFunctionalArea) {
+      res.status(404).send("FunctionalArea not found");
+    }
+    res.status(200).json({
+      message: "FunctionalArea updated successfully!",
+      module: updatedFunctionalArea,
+    });
+  } catch (error) {
+    console.error("error", error);
+    res.status(500).send("Internal server Error");
+  }
+};
+ 

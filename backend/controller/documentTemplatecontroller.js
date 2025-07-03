@@ -69,6 +69,7 @@ exports.getEachDocumentData = async (req, res) => {
     let document = await documentSchema.findOne({
       docName: requestedDocName,
     });
+    console.log("document", document);
     if (!document) {
       res.status(400).send(`There is no document with ${requestedDocName} `);
     }
