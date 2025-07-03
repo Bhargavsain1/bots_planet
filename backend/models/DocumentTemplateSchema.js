@@ -20,7 +20,7 @@ const documentTemplateSchema = new mongoose.Schema({
   displayFlag: {
     type: String,
   },
-  updatebleFlag: {
+  updatableFlag: {
     type: String,
   },
   defaultValue: {
@@ -40,7 +40,7 @@ const documentTemplateSchema = new mongoose.Schema({
     default: "admin",
   },
   docId: {
-    type: Number,
+    type: String,
   },
   updated_by: {
     type: String,

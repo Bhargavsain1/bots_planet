@@ -51,7 +51,7 @@ const Dashboard = () => {
       setErrorModules(null);
       try {
         const data = await axios.get("http://localhost:5000/api/modules");
-
+        console.log("dataaa", data);
         setModules(data.data);
         setErrorModules(null);
       } catch (err) {
@@ -84,7 +84,7 @@ const Dashboard = () => {
       setActiveSubComponent(null);
       try {
         const data = await axios.get(
-          `http://localhost:5000/api/function_area/${moduleId}`
+          `http://localhost:5000/api/functional_area/${moduleId}`
         );
         console.log("data in subbitem", data);
         setSubItems(data.data);
@@ -130,6 +130,7 @@ const Dashboard = () => {
   }, []);
 
   const handleSubItemClick = (itemName) => {
+    console.log("itemmm name", itemName);
     setActiveSubComponent(itemName);
   };
 

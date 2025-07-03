@@ -72,15 +72,15 @@ function Sidebar({
             {!loadingModules &&
               !errorModules &&
               modules.map((module) => (
-                <React.Fragment key={module.moduleId}>
+                <React.Fragment key={module._id}>
                   <ListItem
                     disablePadding
-                    selected={module.moduleId === selectedModuleId}
-                    onClick={() => onModuleClick(module.moduleId)}
+                    selected={module._id === selectedModuleId}
+                    onClick={() => onModuleClick(module._id)}
                   >
                     <ListItemButton>
                       <ListItemText primary={module.moduleName} />{" "}
-                      {module.moduleId === selectedModuleId ? (
+                      {module._id === selectedModuleId ? (
                         <ExpandLess />
                       ) : (
                         <ExpandMore />
@@ -89,7 +89,7 @@ function Sidebar({
                   </ListItem>
 
                   <Collapse
-                    in={module.moduleId === selectedModuleId}
+                    in={module._id === selectedModuleId}
                     timeout="auto"
                     unmountOnExit
                   >
@@ -118,10 +118,10 @@ function Sidebar({
                       subItems.length > 0 ? (
                         subItems.map((subItem) => (
                           <ListItem
-                            key={subItem.faId}
+                            key={subItem._id}
                             disablePadding
-                            selected={subItem.faId === selectedSubItemId}
-                            onClick={() => onSubItemSelect(subItem.faId)}
+                            selected={subItem._id === selectedSubItemId}
+                            onClick={() => onSubItemSelect(subItem._id)}
                           >
                             <ListItemButton>
                               <ListItemText primary={subItem.faName} />

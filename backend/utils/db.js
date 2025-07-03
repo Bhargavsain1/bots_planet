@@ -2,12 +2,10 @@ const mongoose = require("mongoose");
 
 // --- Configuration for your Main Database ---
 const MAIN_DB_URI = `mongodb://localhost:27017/HOST`; // Your main DB name
-const MAIN_COLLECTION_NAME = "main_collection"; // Collection name for your main DB
 
 // --- Configuration for your Tenant Databases ---
 const TENANT_DB_HOST = "localhost"; // MongoDB host for tenant DBs
 const TENANT_DB_PORT = 27017; // MongoDB port for tenant DBs
-const TENANT_COLLECTION_NAME = "tenant_data_collection"; // Constant collection name within each tenant DB
 
 // Map to store active tenant connections for reuse
 const tenantConnections = new Map(); // Key: tenantId, Value: mongoose.Connection instance
@@ -123,6 +121,4 @@ module.exports = {
   connectMainDB,
   getTenantConnection,
   closeAllDBConnections,
-  MAIN_COLLECTION_NAME,
-  TENANT_COLLECTION_NAME,
 };
