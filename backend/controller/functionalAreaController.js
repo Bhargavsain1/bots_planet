@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
 const functionalAreaSchema = require("../models/functionalAreaSchema");
 const documentSchema = require("../models/DocumentSchema");
- 
+const moduleSchema = require("../models/moduleSchema");
 exports.getFuntinalAreaDetails = async (req, res) => {
   try {
     const functionalAreas = await functionalAreaSchema.find({
-      moduleId: parseInt(req.params.id),
+      moduleId: req.params.id,
     });
     if (!functionalAreas.length) {
       res
@@ -22,22 +22,97 @@ exports.getFuntinalAreaDetails = async (req, res) => {
  
 exports.getAllFunctionAreas = async (req, res) => {
   try {
-    const functionalAreas = await functionalAreaSchema.find({});
-    if (!functionalAreas.length) {
-      res.status(404).send(`There are no record `);
+    const functionAreaDataArray = await functionalAreaSchema.find({});
+
+    const moduleIds = [
+      ...new Set(
+        functionAreaDataArray.map((item) => item.moduleId).filter(Boolean)
+      ),
+    ];
+
+    let modulesMap = new Map();
+
+    if (moduleIds.length > 0) {
+      const modules = await moduleSchema.find({ _id: { $in: moduleIds } });
+      modules.forEach((module) => {
+        modulesMap.set(module._id.toString(), module.moduleName);
+      });
     }
-    res.status(200).send(functionalAreas);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Internal server error" });
+
+    const enrichedFunctionAreas = functionAreaDataArray.map((item) => {
+      const itemObject = item.toObject();
+      if (
+        itemObject.moduleId &&
+        modulesMap.has(itemObject.moduleId.toString())
+      ) {
+        itemObject["Module Name"] = modulesMap.get(
+          itemObject.moduleId.toString()
+        );
+      } else {
+        itemObject.moduleName = null;
+      }
+      return itemObject;
+    });
+
+    res.send(enrichedFunctionAreas);
+  } catch (error) {
+    console.error("Error in getAllFunctionAreas:", error);
+    res.status(500).send({
+      message: "Error fetching functional areas and module names",
+      error: error.message,
+    });
   }
 };
 exports.saveFunctionArea = async (req, res) => {
   try {
-    const functionAreaData = req.body;
+    const functionAreaDataArray = req.body;
+
+    if (
+      !Array.isArray(functionAreaDataArray) ||
+      functionAreaDataArray.length === 0
+    ) {
+      return res
+        .status(400)
+        .send(
+          "Request body must be a non-empty array of functional area data."
+        );
+    }
+    const processedFunctionAreas = [];
+
+    for (const item of functionAreaDataArray) {
+      const moduleNameFromUI = item["Module Name"];
+
+      if (!moduleNameFromUI) {
+        return res
+          .status(400)
+          .send(`Missing 'Module Name' for one or more functional areas.`);
+      }
+
+      const moduleRecord = await moduleSchema.findOne({
+        moduleName: moduleNameFromUI,
+      });
+
+      if (!moduleRecord) {
+        return res
+          .status(404)
+          .send(
+            `Module not found for name: '${moduleNameFromUI}'. Cannot save functional area.`
+          );
+      }
+      const newFunctionalArea = {
+        ...item,
+        moduleId: moduleRecord._id,
+      };
+
+      delete newFunctionalArea["Module Name"];
+
+      processedFunctionAreas.push(newFunctionalArea);
+    }
+
     const createdNewFunctionArea = await functionalAreaSchema.insertMany(
-      functionAreaData
+      processedFunctionAreas
     );
+
     if (!createdNewFunctionArea) {
       res.status(400).send("Error while creating the functionArea records");
     }
@@ -50,14 +125,9 @@ exports.saveFunctionArea = async (req, res) => {
  
 exports.getEachFuntinalAreaDetails = async (req, res) => {
   try {
-    const { faId } = req.params;
- 
-    if (isNaN(faId)) {
-      return res.status(400).json({ error: "Invalid faId. Must be a number." });
-    }
- 
+    const { id } = req.params;
     const eachFunctionItems = await documentSchema.find({
-      faId: parseInt(faId),
+      faId: id,
     });
     if (!eachFunctionItems) {
       res.status(404).send("There are no records");
@@ -73,14 +143,12 @@ exports.getEachFuntinalAreaDetails = async (req, res) => {
 exports.schemaDeatils = async (req, res) => {
   try {
     let collectionName = req.params.collectionName;
-    console.log("collectionName", collectionName);
+
     let targetModel = null;
- 
-    // Iterate through all registered Mongoose models
+
     for (const modelName in mongoose.models) {
       const Model = mongoose.models[modelName];
-      console.log("Model", Model);
-      // Check if the model's collection name matches the provided collectionName
+
       if (Model.collection.name === collectionName) {
         targetModel = Model;
         break;
@@ -122,12 +190,12 @@ exports.schemaDeatils = async (req, res) => {
     console.log("MongoDB disconnected.");
   }
 };
- 
+
 exports.updateFunctionArea = async (req, res) => {
   try {
     const { id } = req.params;
     const functionalAreaData = req.body;
- 
+
     let updatedFunctionalArea = await functionalAreaSchema.findByIdAndUpdate(
       { _id: id },
       {
@@ -147,4 +215,3 @@ exports.updateFunctionArea = async (req, res) => {
     res.status(500).send("Internal server Error");
   }
 };
- 

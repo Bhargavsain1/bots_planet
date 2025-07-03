@@ -23,12 +23,12 @@ exports.saveDocumentTemplateList = async (req, res) => {
       docName: documentTemplateArray[0].documentName,
     });
     if (!document) {
-      return res.status(400).json({
-        message: "Document is not available .",
+      return res.status(404).json({
+        message: "Document is not found .",
       });
     }
     for (const item of documentTemplateArray) {
-      item.docId = document.docId;
+      item.docId = document._id;
       if (!item.documentName || !item.fieldLabel || !item.fieldType) {
         return res.status(400).json({
           message:
@@ -40,7 +40,7 @@ exports.saveDocumentTemplateList = async (req, res) => {
     const insertedDocuments = await documentTemplate.insertMany(
       documentTemplateArray
     );
-    // save the data in other collection
+
     let documentId = await addNewFieldtoCollection(documentTemplateArray);
 
     const responseData = insertedDocuments.map((doc) => {
@@ -71,10 +71,10 @@ exports.getEachDocumentData = async (req, res) => {
     });
     console.log("document", document);
     if (!document) {
-      res.status(400).send(`There is no document with ${requestedDocName} `);
+      res.status(404).send(`There is no document with ${requestedDocName} `);
     }
     const documents = await documentTemplate
-      .find({ docId: document.docId })
+      .find({ docId: document._id })
       .lean();
 
     const formattedDocuments = documents.map((doc) => ({
@@ -83,7 +83,6 @@ exports.getEachDocumentData = async (req, res) => {
       id: doc._id.toString(),
     }));
 
-    // Remove the original _id and __v if you don't want them
     const finalDocuments = formattedDocuments.map(
       ({ _id, __v, docName, ...rest }) => rest
     );
@@ -103,17 +102,16 @@ exports.getDocumentByCollection = async (req, res) => {
       collectionName: requestedCollectionName,
     });
     if (!document) {
-      return res.status(400).json({
-        message: "Document is not available .",
+      return res.status(404).json({
+        message: "Document is not Found .",
       });
     }
-    console.log("documentid", document);
     const documents = await documentTemplate
-      .find({ docId: document.docId })
+      .find({ docId: document._id })
       .lean();
     res.status(200).json(documents);
   } catch (err) {
-    console.error("Error fetching document data:", err); // Use console.error for errors
-    res.status(500).json({ message: "Failed to fetch document data." }); // Send a proper error response
+    console.error("Error fetching document data:", err);
+    res.status(500).json({ message: "Failed to fetch document data." });
   }
 };

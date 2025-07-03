@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-
+// auth need to provide after login if anything need to use like profile
+// for that  we need to provide these auth at router session
 const auth = (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
@@ -10,7 +11,7 @@ const auth = (req, res, next) => {
         .status(401)
         .json({ error: "Access Denied. No token provided." });
     }
-    let decoded = jwt.verify(token, "yourSecretKey");
+    let decoded = jwt.verify(token, "your-secret-key");
 
     req.user = decoded;
     next();

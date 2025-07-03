@@ -7,7 +7,7 @@ exports.loginUser = async (req, res) => {
     const { userId, password } = req.body;
     const user = await usersSchema.findOne({ userId });
     if (!user) {
-      return res.status(400).json({ message: "Invalid credentials" });
+      return res.status(404).json({ message: "Invalid credentials" });
     }
     const isMatch = await bcrypt.compare(password, user.password);
 
@@ -27,6 +27,7 @@ exports.loginUser = async (req, res) => {
       token: token,
     });
   } catch (error) {
+    console.log("error", error);
     res.status(500).send({ message: "Internal server error" }, error);
   }
 };

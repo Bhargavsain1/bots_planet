@@ -1,6 +1,6 @@
 import React from "react";
 import DataGridTemplate from "./DataGridTemplate";
- 
+
 const Modules = () => {
   let collectionName = "modules";
   const userConfig = {

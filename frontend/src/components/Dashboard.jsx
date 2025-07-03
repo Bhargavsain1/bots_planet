@@ -56,7 +56,7 @@ const Dashboard = () => {
       setErrorModules(null);
       try {
         const data = await axios.get("http://localhost:5000/api/modules");
-
+        console.log("dataaa", data);
         setModules(data.data);
         setErrorModules(null);
       } catch (err) {
@@ -135,6 +135,7 @@ const Dashboard = () => {
   }, []);
 
   const handleSubItemClick = (itemName) => {
+    console.log("itemmm name", itemName);
     setActiveSubComponent(itemName);
   };
 

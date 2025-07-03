@@ -17,8 +17,8 @@ router.get("/status", (req, res) => {
 });
 //login api
 router.post("/users/register", userController.registerUser);
-router.post("/login", loginController.loginUser);
- 
+router.post("/login", loginRateLimiter, loginController.loginUser);
+
 //function area api
 router.get(
   "/functional_area/:id",
@@ -26,7 +26,7 @@ router.get(
 );
 router.get("/functional_area", functionalAreaontroller.getAllFunctionAreas);
 router.get(
-  "/each_funarea_documents/:faId",
+  "/each_funarea_documents/:id",
   functionalAreaontroller.getEachFuntinalAreaDetails
 );
 router.post("/save_functional_area", functionalAreaontroller.saveFunctionArea);
@@ -54,7 +54,7 @@ router.post("/save_module", moduleController.saveModule);
 router.get("/get_each_module/:moduleId", moduleController.getEachModule);
 router.get("/modules", moduleController.getModulesDetails);
 router.put("/update_module/:id", moduleController.updateModuleDetails);
- 
+
 //document template api
 router.post(
   "/save_document_template",

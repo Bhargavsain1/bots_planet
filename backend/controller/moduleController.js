@@ -20,8 +20,8 @@ exports.saveModule = async (req, res) => {
 exports.getEachModule = async (req, res) => {
   try {
     const { moduleId } = req.params;
-    const response = await moduleSchema.find({
-      moduleId: parseInt(moduleId),
+    const response = await moduleSchema.findById({
+      _id: moduleId,
     });
     if (!response) {
       res.status(404).send("There are no records");
@@ -33,7 +33,6 @@ exports.getEachModule = async (req, res) => {
     res.status(500).send("Internal server error");
   }
 };
-// get modules list
 exports.getModulesDetails = async (req, res) => {
   try {
     const modules = await moduleSchema.find({});
@@ -50,7 +49,7 @@ exports.updateModuleDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const moduleData = req.body;
- 
+
     let updatedModule = await moduleSchema.findByIdAndUpdate(
       { _id: id },
       {
