@@ -11,20 +11,33 @@ const collectionController = require("../controller/collectionController");
 const moduleController = require("../controller/moduleController");
 const documentController = require("../controller/documentController");
 const documentTemplateController = require("../controller/documentTemplatecontroller");
+const saveDataBasedOnCollection = require("../controller/saveDataBasedOnCollection");
+const fetchDataBasedOnCollection = require("../controller/fetchDataBasedOnCollection");
+const updateDataBasedOnCollection = require("../controller/updateDataBasedOnCollection");
 const auth = require("../middileware/auth");
 router.get("/status", (req, res) => {
   res.send("welcome to bots");
 });
+
+router.post("/save_doc", saveDataBasedOnCollection.saveDataBasedOnCollection);
+router.get(
+  "/fetch_doc/:collectionName",
+  fetchDataBasedOnCollection.getDataByCollection
+);
+router.put(
+  "/update_doc/:id",
+  updateDataBasedOnCollection.updateDataBasedOnCollection
+);
 //login api
 router.post("/users/register", userController.registerUser);
 router.post("/login", loginRateLimiter, loginController.loginUser);
 
 //function area api
 router.get(
-  "/functional_area/:id",
+  "/functionalarea/:id",
   functionalAreaontroller.getFuntinalAreaDetails
 );
-router.get("/functional_area", functionalAreaontroller.getAllFunctionAreas);
+router.get("/functionalarea", functionalAreaontroller.getAllFunctionAreas);
 router.get(
   "/each_funarea_documents/:id",
   functionalAreaontroller.getEachFuntinalAreaDetails

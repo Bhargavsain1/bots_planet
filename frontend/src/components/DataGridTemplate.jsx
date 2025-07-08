@@ -19,6 +19,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import axios from "axios";
+import Autocomplete from "@mui/material/Autocomplete";
 
 const capitalize = (s) => {
   if (typeof s !== "string") return "";
@@ -58,6 +59,8 @@ const DataGridTemplate = ({
 
   const [selectedFaName, setSelectedFaName] = useState("");
 
+  const [filteredTableData, setFilteredTableData] = useState([]); // Add new state to store filtered table data
+  const [dropDown, setDropDown] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -65,9 +68,11 @@ const DataGridTemplate = ({
         setError("");
 
         // Fetch field definitions first
-        console.log("haloooooooooooo");
         const fieldDefinitionsResponse = await axios.get(fetchFieldApiUrl);
-        console.log("fieldDefinitionsResponse", fieldDefinitionsResponse);
+        const dropDownCount = fieldDefinitionsResponse.data.filter(
+          (field) => field.foreignDocument && field.displayList
+        );
+        setDropDown(dropDownCount);
         const fetchedFieldDefinitions = fieldDefinitionsResponse.data.filter(
           (field) => field.displayFlag === "Y"
         );
@@ -80,7 +85,11 @@ const DataGridTemplate = ({
 
         // Now fetch the actual data
 
-        const dataResponse = await axios.get(fetchActualData);
+        console.log("enter the field");
+
+        const dataResponse = await axios.get(fetchActualData); // Assuming this is your actual data endpoint
+
+        console.log("dataresponse", dataResponse);
 
         const processedTableData = dataResponse.data.map((item) => {
           const newItem = {};
@@ -125,9 +134,9 @@ const DataGridTemplate = ({
   const addNewBlankRow = () => {
     let newRow = { id: `new-${Date.now()}` };
 
-    if (collectionName === "functional_areas" && selectedModuleId) {
+    if (collectionName === "functionalareas" && selectedModuleId) {
       const selectedModule = modulesOptions.find(
-        (mod) => (mod.moduleId || mod._id) === selectedModuleId
+        (mod) => mod._id === selectedModuleId
       );
       if (selectedModule) {
         const moduleNameField = fieldDefinitions.find((f) =>
@@ -142,7 +151,7 @@ const DataGridTemplate = ({
     if (collectionName === "documents") {
       if (selectedModuleId) {
         const selectedModule = modulesOptions.find(
-          (mod) => (mod.moduleId || mod._id) === selectedModuleId
+          (mod) => mod._id === selectedModuleId
         );
         if (selectedModule) {
           const moduleNameField = fieldDefinitions.find((f) =>
@@ -201,8 +210,10 @@ const DataGridTemplate = ({
       }
 
       const updatePayload = {
-        [fieldLabel]: editingValue,
+        data: { [fieldLabel]: editingValue },
+        collectionName: collectionName,
       };
+      console.log("updatePayload", updatePayload);
 
       const url = `${updateApiUrl}/${originalRecord._id}`;
       const response = await axios.put(url, updatePayload);
@@ -295,9 +306,14 @@ const DataGridTemplate = ({
       setIsSubmitting(false);
       return;
     }
-
+    let data = {
+      requestBody: newRowsToSubmit,
+      collectionName: collectionName,
+    };
+    // newRowsToSubmit.collectionName = collectionName;
+    console.log("collectionName", data);
     try {
-      const response = await axios.post(postApiUrl, newRowsToSubmit);
+      const response = await axios.post(postApiUrl, data);
 
       setNewRows([]);
       const updatedDataResponse = await axios.get(fetchActualData);
@@ -329,7 +345,7 @@ const DataGridTemplate = ({
   };
 
   useEffect(() => {
-    if (collectionName === "functional_areas") {
+    if (collectionName === "functionalareas") {
       fetch("http://localhost:5000/api/modules")
         .then((res) => res.json())
 
@@ -356,7 +372,7 @@ const DataGridTemplate = ({
 
   useEffect(() => {
     if (collectionName === "documents" && selectedModuleId) {
-      fetch(`http://localhost:5000/api/functional_area/${selectedModuleId}`)
+      fetch(`http://localhost:5000/api/functionalarea/${selectedModuleId}`)
         .then((res) => res.json())
 
         .then((data) => setSecondDropdownOptions(data))
@@ -366,6 +382,69 @@ const DataGridTemplate = ({
       setSecondDropdownOptions([]);
     }
   }, [collectionName, selectedModuleId]);
+
+  // Update filteredTableData whenever tableData or dropdown selection changes
+
+  useEffect(() => {
+    if (collectionName === "functionalareas") {
+      if (selectedModuleId) {
+        setFilteredTableData(
+          tableData.filter((row) => {
+            const selectedModule = modulesOptions.find(
+              (mod) => mod._id === selectedModuleId
+            );
+
+            if (!selectedModule) return false;
+
+            return (
+              row._id === selectedModuleId ||
+              row.ModuleName === selectedModule.moduleName ||
+              row["Module Name"] === selectedModule.moduleName ||
+              row.moduleName === selectedModule.moduleName
+            );
+          })
+        );
+      } else {
+        setFilteredTableData([]); // Show empty table if nothing selected
+      }
+    } else if (collectionName === "documents") {
+      if (selectedModuleId && selectedFaName) {
+        setFilteredTableData(
+          tableData.filter((row) => {
+            const selectedModule = modulesOptions.find(
+              (mod) => mod._id === selectedModuleId
+            );
+
+            if (!selectedModule) return false;
+
+            return (
+              (row.moduleName === selectedModule.moduleName ||
+                row["Module Name"] === selectedModule.moduleName ||
+                row._id === selectedModuleId) &&
+              (row.faName === selectedFaName ||
+                row["Functional Area"] === selectedFaName)
+            );
+          })
+        );
+      } else {
+        setFilteredTableData([]); // Show empty table if nothing selected
+      }
+    } else {
+      setFilteredTableData(tableData);
+    }
+  }, [
+    tableData,
+    selectedModuleId,
+    selectedFaName,
+    collectionName,
+    modulesOptions,
+  ]);
+
+  // Update getRowsToDisplay to only show new rows when Add Row is pressed
+
+  const getRowsToDisplay = () => {
+    return [...filteredTableData, ...newRows];
+  };
 
   const renderTable = () => (
     <Paper sx={{ p: 3, mt: 3 }}>
@@ -455,8 +534,8 @@ const DataGridTemplate = ({
               </TableRow>
             ) : (
               <>
-                {/* Display Existing Data (Double-Click Editable) */}
-                {tableData.map((row, index) => (
+                {/* Display Existing Data (Double-Click Editable, Only Filtered Rows) */}
+                {filteredTableData.map((row, index) => (
                   <TableRow key={row.id}>
                     <TableCell>{index + 1}</TableCell>
                     {fieldDefinitions.map((fieldDef) => {
@@ -519,7 +598,9 @@ const DataGridTemplate = ({
                 {/* Input Fields for New Rows */}
                 {newRows.map((row, rowIndex) => (
                   <TableRow key={row.id}>
-                    <TableCell>{tableData.length + rowIndex + 1}</TableCell>
+                    <TableCell>
+                      {filteredTableData.length + rowIndex + 1}
+                    </TableCell>
                     {fieldDefinitions.map((fieldDef) => {
                       const fieldLabel = fieldDef.fieldLabel;
                       const isUpdatable = fieldDef.updatableFlag === "Y";
@@ -527,7 +608,7 @@ const DataGridTemplate = ({
                       let isAutoFilled = false;
                       let autoFilledValue = "";
                       if (
-                        collectionName === "functional_areas" &&
+                        collectionName === "functionalareas" &&
                         fieldLabel.toLowerCase().includes("module")
                       ) {
                         if (row[fieldLabel]) {
@@ -657,103 +738,95 @@ const DataGridTemplate = ({
       </Typography>
       {/* Dropdowns based on collectionName */}
 
-      {collectionName === "functional_areas" && (
+      {collectionName === "functionalareas" && (
         <Box sx={{ mt: 2, mb: 3, width: "300px" }}>
-          <FormControl fullWidth>
-            <InputLabel id="module-select-label">Select Module</InputLabel>
-
-            <Select
-              labelId="module-select-label"
-              id="module-select"
-              value={selectedModuleId}
-              label="Select Module"
-              onChange={(e) => {
-                setSelectedModuleId(e.target.value);
-
-                setSelectedFaName(""); // Reset second dropdown
-              }}
-              MenuProps={{ sx: { zIndex: 9999 } }}
-            >
-              <MenuItem value="">
-                <em>None</em>
-              </MenuItem>
-
-              {modulesOptions.map((mod) => (
-                <MenuItem
-                  key={mod.moduleId || mod._id || mod.moduleName}
-                  value={mod.moduleId || mod._id}
-                >
-                  {mod.moduleName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Autocomplete
+            options={modulesOptions
+              .slice()
+              .sort((a, b) =>
+                (a.moduleName || "").localeCompare(b.moduleName || "")
+              )}
+            getOptionLabel={(option) => option.moduleName || ""}
+            value={
+              modulesOptions.find(
+                (mod) => String(mod._id) === String(selectedModuleId)
+              ) || null
+            }
+            onChange={(event, newValue) => {
+              setSelectedModuleId(newValue ? newValue._id : "");
+              setSelectedFaName("");
+            }}
+            renderInput={(params) => (
+              <TextField {...params} label="Select Module" variant="outlined" />
+            )}
+            isOptionEqualToValue={(option, value) =>
+              String(option._id) === String(value._id)
+            }
+            clearOnEscape
+          />
         </Box>
       )}
 
       {collectionName === "documents" && (
         <Box sx={{ display: "flex", gap: 2, mt: 2, mb: 3 }}>
           <Box sx={{ width: "300px" }}>
-            <FormControl fullWidth>
-              <InputLabel id="module-select-label">Select Module</InputLabel>
-
-              <Select
-                labelId="module-select-label"
-                id="module-select"
-                value={selectedModuleId}
-                label="Select Module"
-                onChange={(e) => {
-                  setSelectedModuleId(e.target.value);
-
-                  setSelectedFaName(""); // Reset second dropdown
-                }}
-                MenuProps={{ sx: { zIndex: 9999 } }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-
-                {modulesOptions.map((mod) => (
-                  <MenuItem
-                    key={mod.moduleId || mod._id || mod.moduleName}
-                    value={mod.moduleId || mod._id}
-                  >
-                    {mod.moduleName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              options={modulesOptions
+                .slice()
+                .sort((a, b) =>
+                  (a.moduleName || "").localeCompare(b.moduleName || "")
+                )}
+              getOptionLabel={(option) => option.moduleName || ""}
+              value={
+                modulesOptions.find(
+                  (mod) => String(mod._id) === String(selectedModuleId)
+                ) || null
+              }
+              onChange={(event, newValue) => {
+                setSelectedModuleId(newValue ? newValue._id : "");
+                setSelectedFaName("");
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Select Module"
+                  variant="outlined"
+                />
+              )}
+              isOptionEqualToValue={(option, value) =>
+                String(option._id) === String(value._id)
+              }
+              clearOnEscape
+            />
           </Box>
 
           <Box sx={{ width: "300px" }}>
-            <FormControl fullWidth>
-              <InputLabel id="fa-select-label-2">
-                Select Functional Area
-              </InputLabel>
-
-              <Select
-                labelId="fa-select-label-2"
-                id="fa-select-2"
-                value={selectedFaName}
-                label="Select Functional Area"
-                onChange={(e) => setSelectedFaName(e.target.value)}
-                MenuProps={{ sx: { zIndex: 9999 } }}
-                disabled={!selectedModuleId}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-
-                {secondDropdownOptions.map((fa) => (
-                  <MenuItem
-                    key={fa.faId || fa._id || fa.faName}
-                    value={fa.faName}
-                  >
-                    {fa.faName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              options={secondDropdownOptions
+                .slice()
+                .sort((a, b) => (a.faName || "").localeCompare(b.faName || ""))}
+              getOptionLabel={(option) => option.faName || ""}
+              value={
+                secondDropdownOptions.find(
+                  (fa) => String(fa.faName) === String(selectedFaName)
+                ) || null
+              }
+              onChange={(event, newValue) =>
+                setSelectedFaName(newValue ? newValue.faName : "")
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Select Functional Area"
+                  variant="outlined"
+                />
+              )}
+              isOptionEqualToValue={(option, value) =>
+                String(option.faName) === String(value.faName)
+              }
+              disabled={!selectedModuleId}
+              clearOnEscape
+            />
           </Box>
         </Box>
       )}

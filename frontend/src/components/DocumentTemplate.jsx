@@ -83,7 +83,7 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
       try {
         if (pageType === "FunctionalArea") {
           const response = await fetch(
-            "http://localhost:5000/api/functional_area"
+            "http://localhost:5000/api/functionalarea"
           );
           if (!response.ok) {
             throw new Error("Failed to fetch functional areas");

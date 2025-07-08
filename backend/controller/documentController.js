@@ -2,7 +2,9 @@ const mongoose = require("mongoose");
 const functionalAreaSchema = require("../models/functionalAreaSchema");
 const documentSchema = require("../models/DocumentSchema");
 const moduleSchema = require("../models/moduleSchema");
-const { getDynamicCollectionModel } = require("../utils/dynamicCollection");
+const {
+  getDynamicCollectionModel,
+} = require("../utils/getDynamicCollectionModel");
 exports.getDocumentList = async (req, res) => {
   try {
     const documentDataArray = await documentSchema.find({});
@@ -128,6 +130,7 @@ exports.updateDocumets = async (req, res) => {
   try {
     const { id } = req.params;
     const documentData = req.body;
+    console.log("update", req.body);
 
     let updatedDocuments = await documentSchema.findByIdAndUpdate(
       { _id: id },

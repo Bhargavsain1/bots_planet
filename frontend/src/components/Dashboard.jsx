@@ -84,7 +84,7 @@ const Dashboard = () => {
       setActiveSubComponent(null);
       try {
         const data = await axios.get(
-          `http://localhost:5000/api/functional_area/${moduleId}`
+          `http://localhost:5000/api/functionalarea/${moduleId}`
         );
         console.log("data in subbitem", data);
         setSubItems(data.data);
@@ -233,16 +233,12 @@ const Dashboard = () => {
           />
         )}
         <Box sx={{ p: 3 }}>
-          {activeSubComponent === "Document Templates" ? (
-            <DocumentTemplate />
-          ) : activeSubComponent === "Modules" ? (
-            <Modules />
-          ) : activeSubComponent === "Functional Areas" ? (
-            <FunctionalArea />
-          ) : activeSubComponent === "Documents" ? (
-            <Documents />
-          ) : (
+          {activeSubComponent === null ? (
             <Typography></Typography>
+          ) : activeSubComponent === "Document Templates" ? (
+            <DocumentTemplate />
+          ) : (
+            <Modules activeSubComponent={activeSubComponent} />
           )}
         </Box>
       </Box>

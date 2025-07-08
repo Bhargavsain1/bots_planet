@@ -1,15 +1,21 @@
 import React from "react";
 import DataGridTemplate from "./DataGridTemplate";
 
-const Modules = () => {
-  let collectionName = "modules";
+const Modules = (props) => {
+  console.log("props", props);
+  const { activeSubComponent } = props;
+  const lowerCaseActiveSubComponent = activeSubComponent
+    ? activeSubComponent.toLowerCase().replace(/\s/g, "")
+    : "";
+
+  console.log("propdddds", lowerCaseActiveSubComponent);
   const userConfig = {
-    title: "Modules",
-    fetchFieldApiUrl: `http://localhost:5000/api/get_document_by_collection/${collectionName}`,
-    fetchActualData: "http://localhost:5000/api/modules",
-    postApiUrl: "http://localhost:5000/api/save_module",
-    updateApiUrl: "http://localhost:5000/api/update_module",
-    collectionName: "modules",
+    title: activeSubComponent,
+    fetchFieldApiUrl: `http://localhost:5000/api/get_document_by_collection/${lowerCaseActiveSubComponent}`,
+    fetchActualData: `http://localhost:5000/api/fetch_doc/${lowerCaseActiveSubComponent}`,
+    postApiUrl: "http://localhost:5000/api/save_doc",
+    updateApiUrl: "http://localhost:5000/api/update_doc",
+    collectionName: lowerCaseActiveSubComponent,
   };
 
   return <DataGridTemplate {...userConfig} />;

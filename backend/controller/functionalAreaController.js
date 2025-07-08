@@ -127,7 +127,7 @@ exports.getEachFuntinalAreaDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const eachFunctionItems = await documentSchema.find({
-      faId: id,
+      functionalAreaId: id,
     });
     if (!eachFunctionItems) {
       res.status(404).send("There are no records");

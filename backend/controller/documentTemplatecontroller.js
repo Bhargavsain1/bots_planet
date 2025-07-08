@@ -6,10 +6,16 @@ const documentSchema = require("../models/DocumentSchema");
 const Modules = require("../models/moduleSchema");
 let { addNewFieldtoCollection } = require("../controller/collectionController");
 
+function removeTrailingS(str) {
+  if (str.endsWith("s")) {
+    return str.slice(0, -1); // Remove the last character if it's 's'
+  }
+  return str; // Return the original string if it doesn't end with 's'
+}
 exports.saveDocumentTemplateList = async (req, res) => {
   try {
     const documentTemplateArray = req.body;
-
+    console.log("documentTemplate", documentTemplateArray);
     if (
       !Array.isArray(documentTemplateArray) ||
       documentTemplateArray.length === 0
@@ -100,6 +106,7 @@ exports.getDocumentByCollection = async (req, res) => {
     let document = await documentSchema.findOne({
       collectionName: requestedCollectionName,
     });
+    console.log("document", document);
     if (!document) {
       return res.status(404).json({
         message: "Document is not Found .",

@@ -49,6 +49,7 @@ exports.updateModuleDetails = async (req, res) => {
   try {
     const { id } = req.params;
     const moduleData = req.body;
+    console.log("req.body",req.body)
 
     let updatedModule = await moduleSchema.findByIdAndUpdate(
       { _id: id },
