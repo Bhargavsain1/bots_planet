@@ -7,14 +7,13 @@ const Modules = (props) => {
   const lowerCaseActiveSubComponent = activeSubComponent
     ? activeSubComponent.toLowerCase().replace(/\s/g, "")
     : "";
-
-  console.log("propdddds", lowerCaseActiveSubComponent);
   const userConfig = {
     title: activeSubComponent,
-    fetchFieldApiUrl: `http://localhost:5000/api/get_document_by_collection/${lowerCaseActiveSubComponent}`,
-    fetchActualData: `http://localhost:5000/api/fetch_doc/${lowerCaseActiveSubComponent}`,
+    fetchFieldApiUrl: `http://localhost:5000/api/get_document_by_docname/${activeSubComponent}`,
+    fetchActualData: `http://localhost:5000/api/fetch_doc/${activeSubComponent}`,
     postApiUrl: "http://localhost:5000/api/save_doc",
     updateApiUrl: "http://localhost:5000/api/update_doc",
+    docName: activeSubComponent,
     collectionName: lowerCaseActiveSubComponent,
   };
 

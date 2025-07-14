@@ -15,7 +15,7 @@ function removeTrailingS(str) {
 exports.saveDocumentTemplateList = async (req, res) => {
   try {
     const documentTemplateArray = req.body;
-    console.log("documentTemplate", documentTemplateArray);
+    // console.log("documentTemplate", documentTemplateArray);
     if (
       !Array.isArray(documentTemplateArray) ||
       documentTemplateArray.length === 0
@@ -101,12 +101,12 @@ exports.getEachDocumentData = async (req, res) => {
 
 exports.getDocumentByCollection = async (req, res) => {
   try {
-    const requestedCollectionName = req.params.collectionName;
+    const requestedDocName = req.params.docName;
 
     let document = await documentSchema.findOne({
-      collectionName: requestedCollectionName,
+      docName: requestedDocName,
     });
-    console.log("document", document);
+    // console.log("document", document);
     if (!document) {
       return res.status(404).json({
         message: "Document is not Found .",
@@ -119,5 +119,17 @@ exports.getDocumentByCollection = async (req, res) => {
   } catch (err) {
     console.error("Error fetching document data:", err);
     res.status(500).json({ message: "Failed to fetch document data." });
+  }
+};
+
+exports.getDocumentTemplate = async (req, res) => {
+  try {
+    const documentTemplateDataArray = await documentTemplate.find({});
+    if (documentTemplateDataArray) {
+      res.status(404).send("Records are not found");
+    }
+    res.status(200).send(documentTemplateDataArray);
+  } catch (err) {
+    console.log("err", err);
   }
 };

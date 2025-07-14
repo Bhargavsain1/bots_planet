@@ -22,6 +22,7 @@ exports.registerUser = async (req, res) => {
       selectedBots,
       phoneNumber,
     } = req.body;
+    console.log("req.body", req.body);
     console.log(
       "req.bosy",
       name,
@@ -83,7 +84,9 @@ exports.registerUser = async (req, res) => {
     let tenantConnection;
     const dbName = `${counter.lastDbId}`;
     tenantConnection = await getTenantConnection(dbName);
+    console.log("tenantConnection", tenantConnection);
     const dynamicUser = getDynamicUser(tenantConnection);
+    console.log("dynamicuser", dynamicUser);
     let createdDynamicUser;
     try {
       try {

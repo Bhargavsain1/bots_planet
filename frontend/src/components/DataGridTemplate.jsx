@@ -33,6 +33,7 @@ const DataGridTemplate = ({
   updateApiUrl,
   collectionName,
   fetchActualData,
+  docName,
 }) => {
   const [tableData, setTableData] = useState([]);
   const [newRows, setNewRows] = useState([]);
@@ -48,19 +49,14 @@ const DataGridTemplate = ({
   const inputRef = useRef(null);
 
   // --- Dropdown States ---
-
-  // const [faOptions, setFaOptions] = useState([]); // For function_area dropdown
-
   const [modulesOptions, setModulesOptions] = useState([]); // For modules dropdown
-
   const [secondDropdownOptions, setSecondDropdownOptions] = useState([]); // For function_area under module
-
   const [selectedModuleId, setSelectedModuleId] = useState("");
-
   const [selectedFaName, setSelectedFaName] = useState("");
 
   const [filteredTableData, setFilteredTableData] = useState([]); // Add new state to store filtered table data
   const [dropDown, setDropDown] = useState([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -69,9 +65,11 @@ const DataGridTemplate = ({
 
         // Fetch field definitions first
         const fieldDefinitionsResponse = await axios.get(fetchFieldApiUrl);
+        console.log("fieldDefinitionsResponse", fieldDefinitionsResponse);
         const dropDownCount = fieldDefinitionsResponse.data.filter(
           (field) => field.foreignDocument && field.displayList
         );
+        console.log("count", dropDownCount);
         setDropDown(dropDownCount);
         const fetchedFieldDefinitions = fieldDefinitionsResponse.data.filter(
           (field) => field.displayFlag === "Y"
@@ -84,11 +82,8 @@ const DataGridTemplate = ({
         );
 
         // Now fetch the actual data
-
         console.log("enter the field");
-
         const dataResponse = await axios.get(fetchActualData); // Assuming this is your actual data endpoint
-
         console.log("dataresponse", dataResponse);
 
         const processedTableData = dataResponse.data.map((item) => {
@@ -133,6 +128,18 @@ const DataGridTemplate = ({
 
   const addNewBlankRow = () => {
     let newRow = { id: `new-${Date.now()}` };
+
+    // Populate newRow with default values from fieldDefinitions
+    fieldDefinitions.forEach((fieldDef) => {
+      if (
+        fieldDef.defaultValue !== undefined &&
+        fieldDef.defaultValue !== null
+      ) {
+        newRow[fieldDef.fieldLabel] = fieldDef.defaultValue;
+      } else {
+        newRow[fieldDef.fieldLabel] = ""; // Initialize with empty string
+      }
+    });
 
     if (collectionName === "functionalareas" && selectedModuleId) {
       const selectedModule = modulesOptions.find(
@@ -211,7 +218,7 @@ const DataGridTemplate = ({
 
       const updatePayload = {
         data: { [fieldLabel]: editingValue },
-        collectionName: collectionName,
+        docName: docName,
       };
       console.log("updatePayload", updatePayload);
 
@@ -271,11 +278,24 @@ const DataGridTemplate = ({
 
       fieldDefinitions.forEach((fieldDef) => {
         if (fieldDef.displayFlag === "Y") {
-          rowData[fieldDef.fieldLabel] = row[fieldDef.fieldLabel];
+          // Use the value from the row, or the default value if the row's value is empty
+          // Check if the user has modified the field (i.e., it's not the default value and not empty)
+          const userEnteredValue = row[fieldDef.fieldLabel];
+          const hasUserEnteredData =
+            userEnteredValue !== undefined &&
+            userEnteredValue !== null &&
+            String(userEnteredValue).trim() !== "" &&
+            String(userEnteredValue) !== String(fieldDef.defaultValue);
+
+          rowData[fieldDef.fieldLabel] = hasUserEnteredData
+            ? userEnteredValue
+            : fieldDef.defaultValue !== undefined
+            ? fieldDef.defaultValue
+            : ""; // Fallback to empty string if no default
 
           if (
-            row[fieldDef.fieldLabel] &&
-            String(row[fieldDef.fieldLabel]).trim() !== ""
+            rowData[fieldDef.fieldLabel] &&
+            String(rowData[fieldDef.fieldLabel]).trim() !== ""
           ) {
             isEmptyRow = false;
           }
@@ -284,7 +304,12 @@ const DataGridTemplate = ({
 
       if (!isEmptyRow) {
         for (const fieldLabel of updatableDisplayFieldLabels) {
-          if (!row[fieldLabel] || String(row[fieldLabel]).trim() === "") {
+          // If a field is required (updatable) and still empty after considering default values,
+          // then show an error.
+          if (
+            !rowData[fieldLabel] ||
+            String(rowData[fieldLabel]).trim() === ""
+          ) {
             setError(
               `Please fill all required (updatable) fields in new row ${
                 tableData.length + i + 1
@@ -308,9 +333,8 @@ const DataGridTemplate = ({
     }
     let data = {
       requestBody: newRowsToSubmit,
-      collectionName: collectionName,
+      docName: docName,
     };
-    // newRowsToSubmit.collectionName = collectionName;
     console.log("collectionName", data);
     try {
       const response = await axios.post(postApiUrl, data);
@@ -348,42 +372,30 @@ const DataGridTemplate = ({
     if (collectionName === "functionalareas") {
       fetch("http://localhost:5000/api/modules")
         .then((res) => res.json())
-
         .then((data) => setModulesOptions(data))
-
         .catch(() => setModulesOptions([]));
     }
   }, [collectionName]);
-
-  // Fetch modules options if collectionName === 'document'
 
   useEffect(() => {
     if (collectionName === "documents") {
       fetch("http://localhost:5000/api/modules")
         .then((res) => res.json())
-
         .then((data) => setModulesOptions(data))
-
         .catch(() => setModulesOptions([]));
     }
   }, [collectionName]);
-
-  // Fetch function_area options for selected module (second dropdown)
 
   useEffect(() => {
     if (collectionName === "documents" && selectedModuleId) {
       fetch(`http://localhost:5000/api/functionalarea/${selectedModuleId}`)
         .then((res) => res.json())
-
         .then((data) => setSecondDropdownOptions(data))
-
         .catch(() => setSecondDropdownOptions([]));
     } else {
       setSecondDropdownOptions([]);
     }
   }, [collectionName, selectedModuleId]);
-
-  // Update filteredTableData whenever tableData or dropdown selection changes
 
   useEffect(() => {
     if (collectionName === "functionalareas") {
@@ -439,8 +451,6 @@ const DataGridTemplate = ({
     collectionName,
     modulesOptions,
   ]);
-
-  // Update getRowsToDisplay to only show new rows when Add Row is pressed
 
   const getRowsToDisplay = () => {
     return [...filteredTableData, ...newRows];
@@ -604,34 +614,20 @@ const DataGridTemplate = ({
                     {fieldDefinitions.map((fieldDef) => {
                       const fieldLabel = fieldDef.fieldLabel;
                       const isUpdatable = fieldDef.updatableFlag === "Y";
-                      // Determine if this field should be auto-filled and non-editable
-                      let isAutoFilled = false;
-                      let autoFilledValue = "";
-                      if (
-                        collectionName === "functionalareas" &&
-                        fieldLabel.toLowerCase().includes("module")
-                      ) {
-                        if (row[fieldLabel]) {
-                          isAutoFilled = true;
-                          autoFilledValue = row[fieldLabel];
-                        }
-                      }
-                      if (collectionName === "documents") {
-                        if (
-                          fieldLabel.toLowerCase().includes("module") &&
-                          row[fieldLabel]
-                        ) {
-                          isAutoFilled = true;
-                          autoFilledValue = row[fieldLabel];
-                        }
-                        if (
-                          fieldLabel.toLowerCase().includes("functional") &&
-                          row[fieldLabel]
-                        ) {
-                          isAutoFilled = true;
-                          autoFilledValue = row[fieldLabel];
-                        }
-                      }
+                      const isAutoFilled =
+                        (collectionName === "functionalareas" &&
+                          fieldLabel.toLowerCase().includes("module")) ||
+                        (collectionName === "documents" &&
+                          (fieldLabel.toLowerCase().includes("module") ||
+                            fieldLabel.toLowerCase().includes("functional")));
+
+                      // Check if the current value in the new row is the default value
+                      const isDefaultValue =
+                        fieldDef.defaultValue !== undefined &&
+                        fieldDef.defaultValue !== null &&
+                        String(row[fieldLabel] || "") ===
+                          String(fieldDef.defaultValue);
+
                       return (
                         <TableCell
                           key={`${row.id}-${fieldLabel}-input`}
@@ -644,7 +640,7 @@ const DataGridTemplate = ({
                           {isAutoFilled ? (
                             <TextField
                               name={fieldLabel}
-                              value={autoFilledValue}
+                              value={row[fieldLabel] || ""} // Display the current row value
                               size="small"
                               fullWidth
                               disabled
@@ -659,8 +655,9 @@ const DataGridTemplate = ({
                                 },
                                 "& fieldset": { border: "none" },
                                 "& .Mui-disabled": {
-                                  "-webkit-text-fill-color":
-                                    "rgba(0, 0, 0, 0.87)",
+                                  "-webkit-text-fill-color": isDefaultValue
+                                    ? "rgba(0, 0, 0, 0.4)" // Lighter color for disabled default
+                                    : "rgba(0, 0, 0, 0.87)", // Standard color for disabled non-default
                                   opacity: 1,
                                 },
                               }}
@@ -689,6 +686,15 @@ const DataGridTemplate = ({
                                   "&:hover fieldset": { borderColor: "none" },
                                 },
                                 "& fieldset": { border: "none" },
+                                // Apply lighter color if it's the default value and not auto-filled
+                                "& .MuiInputBase-input": {
+                                  color:
+                                    isDefaultValue &&
+                                    String(row[fieldLabel] || "") ===
+                                      String(fieldDef.defaultValue)
+                                      ? "rgba(0, 0, 0, 0.4)" // Lighter color for default values
+                                      : "inherit", // Standard color
+                                },
                                 "& .Mui-disabled": {
                                   "-webkit-text-fill-color":
                                     "rgba(0, 0, 0, 0.87)",

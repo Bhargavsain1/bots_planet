@@ -18,6 +18,8 @@ exports.loginUser = async (req, res) => {
     const token = jwt.sign(
       {
         id: user.userId,
+        dbName: user.dbName,
+        tenentId: user.tenentId,
       },
       process.env.JWT_SECRET || "your-secret-key",
       { expiresIn: "15m" }

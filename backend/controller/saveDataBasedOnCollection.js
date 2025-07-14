@@ -208,11 +208,11 @@ function toCamelCaseWithoutSpaces(str) {
 }
 exports.saveDataBasedOnCollection = async (req, res) => {
   try {
-    const { collectionName, requestBody } = req.body;
+    const { docName, requestBody } = req.body;
     console.log("collectionname", req.body);
     // 1. Find the document in documentSchema
     let document = await Document.findOne({
-      collectionName: collectionName,
+      docName,
     });
 
     if (!document) {
@@ -231,12 +231,19 @@ exports.saveDataBasedOnCollection = async (req, res) => {
     for (const [index, requestData] of requestBody.entries()) {
       for (const template of documentTemplates) {
         const { fieldLabel, foreignDocument, displayList } = template;
-        console.log("hsdkskdks", fieldLabel, foreignDocument, displayList);
+        console.log(
+          "hsdkskdks",
+          fieldLabel,
+          foreignDocument,
+          displayList,
+          requestData[fieldLabel] !== undefined
+        );
         if (
           requestData[fieldLabel] !== undefined &&
           foreignDocument &&
           displayList
         ) {
+          console.log("1111");
           const testValue = requestData[fieldLabel]; // The value from the current requestData object
           let foreignDocumentValue = foreignDocument
             .replace(/\s/g, "")
@@ -255,8 +262,11 @@ exports.saveDataBasedOnCollection = async (req, res) => {
           delete requestData[fieldLabel];
         }
       }
+      // if (requestData.collectionName) {
+      //   getDynamicCollectionModel(requestData.collectionName);
+      // }
       console.log("rwqwqqw", requestData);
-      dynamicCollection = getDynamicCollectionModel(collectionName);
+      dynamicCollection = getDynamicCollectionModel(document.collectionName);
       let response = await dynamicCollection.insertMany(requestData);
       console.log("response", response);
       res.status(200).send(response);

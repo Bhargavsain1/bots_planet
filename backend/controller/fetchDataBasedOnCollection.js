@@ -425,20 +425,20 @@ function toCamelCaseWithoutSpaces(str) {
 
 exports.getDataByCollection = async (req, res) => {
   try {
-    const { collectionName } = req.params;
-    console.log(`[INFO] Request received for collection: ${collectionName}`);
+    const { docName } = req.params;
+    console.log(`[INFO] Request received for doc Name: ${docName}`);
 
     // 1. Fetch the document schema configuration for the requested collection
     const documentConfig = await documentSchema.findOne({
-      collectionName: collectionName,
+      docName,
     });
 
     if (!documentConfig) {
-      console.warn(
-        `[WARN] Document schema not found for collection: ${collectionName}`
-      );
+      // console.warn(
+      //   `[WARN] Document schema not found for collection: ${collectionName}`
+      // );
       return res.status(404).json({
-        message: `Configuration not found for collection: ${collectionName}.`,
+        message: `Configuration not found for docName: ${docName}.`,
       });
     }
 
@@ -455,7 +455,9 @@ exports.getDataByCollection = async (req, res) => {
     // );
 
     // 3. Get the Mongoose model for the primary collection
-    const PrimaryCollectionModel = getDynamicCollectionModel(collectionName);
+    const PrimaryCollectionModel = getDynamicCollectionModel(
+      documentConfig.collectionName
+    );
     // console.log(
     //   `[INFO] Fetched model for primary collection: ${PrimaryCollectionModel.modelName}`
     // );
@@ -498,35 +500,38 @@ exports.getDataByCollection = async (req, res) => {
               const foreignId = idToLookup.toString();
 
               // Get the Mongoose model for the foreign collection
-              const ForeignCollectionModel =
+              const foreignCollectionModel =
                 getDynamicCollectionModel(foreignModelBaseName);
-              console.log(
-                `[DEBUG] Looking up ID '${foreignId}' in foreign collection: '${ForeignCollectionModel.modelName}' for display field: '${displayList}'`
-              );
+              // console.log(
+              //   `[DEBUG] Looking up ID '${foreignId}' in foreign collection: '${ForeignCollectionModel.modelName}' for display field: '${displayList}'`
+              // );
 
               // Fetch the foreign record
-              const foreignRecord = await ForeignCollectionModel.findOne({
-                _id: foreignId,
-              }).lean();
+              const foreignRecord = await foreignCollectionModel
+                .findOne({
+                  _id: foreignId,
+                })
+                .lean();
 
               if (foreignRecord) {
                 modifiedRecord[fieldLabel] = foreignRecord[displayList];
-                console.log(
-                  `[DEBUG] Successfully mapped '${fieldLabel}' to '${modifiedRecord[fieldLabel]}'.`
-                );
+                // console.log(
+                //   `[DEBUG] Successfully mapped '${fieldLabel}' to '${modifiedRecord[fieldLabel]}'.`
+                // );
               } else {
                 modifiedRecord[fieldLabel] = null;
-                console.warn(
-                  `[WARN] Foreign record with ID '${foreignId}' not found in collection '${ForeignCollectionModel.modelName}'.`
-                );
+                // console.warn(
+                //   `[WARN] Foreign record with ID '${foreignId}' not found in collection '${ForeignCollectionModel.modelName}'.`
+                // );
               }
 
               delete modifiedRecord[foreignKeyFieldName];
-            } else {
-              console.log(
-                `[DEBUG] No foreign key field '${foreignKeyFieldName}' found in record for lookup.`
-              );
             }
+            //  else {
+            //   console.log(
+            //     `[DEBUG] No foreign key field '${foreignKeyFieldName}' found in record for lookup.`
+            //   );
+            // }
           }
         }
         return modifiedRecord;
@@ -534,9 +539,9 @@ exports.getDataByCollection = async (req, res) => {
     );
 
     res.status(200).json(transformedRecords);
-    console.log(
-      `[INFO] Successfully processed and sent ${transformedRecords.length} records.`
-    );
+    // console.log(
+    //   `[INFO] Successfully processed and sent ${transformedRecords.length} records.`
+    // );
   } catch (error) {
     console.error(
       `[ERROR] Internal server error in getDataByCollection:`,
@@ -548,5 +553,24 @@ exports.getDataByCollection = async (req, res) => {
       error: process.env.NODE_ENV === "production" ? null : error.message, // Hide detailed error in production
       stack: process.env.NODE_ENV === "production" ? null : error.stack,
     });
+  }
+};
+exports.fetchDocRecords = async (req, res) => {
+  try {
+    const { docName } = req.params;
+    let record = await documentSchema.findOne({
+      docName,
+    });
+
+    const PrimaryCollectionModel = getDynamicCollectionModel(
+      record.collectionName
+    );
+    const primaryRecords = await PrimaryCollectionModel.find({});
+    if (!primaryRecords) {
+      res.status(404).send("records not found");
+    }
+    res.status(200).send(primaryRecords);
+  } catch (err) {
+    console.log(err);
   }
 };

@@ -42,14 +42,7 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
 
   const [docNames, setDocNames] = useState([]);
   const [collectionNames, setCollectionNames] = useState([]);
-  const [functionalAreas, setFunctionalAreas] = useState([]);
-  const [modules, setModules] = useState([]);
-  const [selectedModuleId, setSelectedModuleId] = useState("");
-  const [secondDropdownOptions, setSecondDropdownOptions] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
-  // const [selectedDocument1, setSelectedDocument1] = useState("");
-  const [selectedDocument2, setSelectedDocument2] = useState("");
-
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState("success");
@@ -81,73 +74,25 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
     const fetchData = async () => {
       setError("");
       try {
-        if (pageType === "FunctionalArea") {
-          const response = await fetch(
-            "http://localhost:5000/api/functionalarea"
-          );
-          if (!response.ok) {
-            throw new Error("Failed to fetch functional areas");
-          }
-          const data = await response.json();
-          setFunctionalAreas(data.map((item) => item.faName));
-        } else if (pageType === "Document") {
-          const [functionalAreasRes, modulesRes] = await Promise.all([
-            fetch("http://localhost:5000/api/function_area"),
-            fetch("http://localhost:5000/api/modules"),
-          ]);
-          if (!functionalAreasRes.ok) {
-            throw new Error("Failed to fetch functional areas");
-          }
-          if (!modulesRes.ok) {
-            throw new Error("Failed to fetch modules");
-          }
-          const functionalAreasData = await functionalAreasRes.json();
-          const modulesData = await modulesRes.json();
-          setFunctionalAreas(functionalAreasData.map((item) => item.faName));
-          setModules(modulesData.map((item) => item.moduleName));
-        } else if (pageType === "DocumentTemplate") {
-          const response = await fetch(
-            "http://localhost:5000/api/document_list"
-          );
-          if (!response.ok) {
-            throw new Error("Failed to fetch document list");
-          }
-          const data = await response.json();
-          setDocNames(data.map((item) => item.docName));
-          setCollectionNames(data.map((item) => item.collectionName));
+        const response = await fetch("http://localhost:5000/api/document_list");
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch document list");
         }
+        const data = await response.json();
+        console.log("response in doc", response, "------", data);
+        setDocNames(data.map((item) => item.docName));
+        setCollectionNames(data.map((item) => item.collectionName));
       } catch (error) {
         console.error("Error fetching data:", error);
         setError(`Failed to fetch data for ${pageType}.`);
         // Clear all data states on error
         setDocNames([]);
-        setFunctionalAreas([]);
-        setModules([]);
       }
     };
 
     fetchData();
-  }, [pageType]);
-
-  useEffect(() => {
-    if (pageType === "Document") {
-      fetch("http://localhost:5000/api/modules")
-        .then((res) => res.json())
-        .then((data) => setModules(data))
-        .catch(() => setModules([]));
-    }
-  }, [pageType]);
-
-  useEffect(() => {
-    if (!selectedModuleId) {
-      setSecondDropdownOptions([]);
-      return;
-    }
-    fetch(`http://localhost:5000/api/function_area/${selectedModuleId}`)
-      .then((res) => res.json())
-      .then((data) => setSecondDropdownOptions(data))
-      .catch(() => setSecondDropdownOptions([]));
-  }, [selectedModuleId]);
+  }, []);
 
   useEffect(() => {
     fetchDocumentFields(selectedDocument);
@@ -176,6 +121,7 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
             [rowIndex]: fieldNames,
           }));
         } catch (err) {
+          console.error(err);
           setForeignDocFields((prev) => ({
             ...prev,
             [rowIndex]: [],
@@ -533,9 +479,6 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
                     required
                     displayEmpty
                   >
-                    {/*<MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>*/}
                     <MenuItem value="Y">Y</MenuItem>
                     <MenuItem value="N">N</MenuItem>
                   </Select>
@@ -551,9 +494,6 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
                     required
                     displayEmpty
                   >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
                     {collectionNames.map((name) => (
                       <MenuItem key={name} value={name}>
                         {name}
@@ -572,9 +512,6 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
                     displayEmpty
                     disabled={!row.foreignDocument}
                   >
-                    <MenuItem value="">
-                      <em>None</em>
-                    </MenuItem>
                     {(foreignDocFields[rowIndex] || []).map((field) => (
                       <MenuItem key={field} value={field}>
                         {field}
@@ -662,88 +599,29 @@ const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
       </Typography>
 
       {/* Conditionally render two dropdowns for Document, one for others */}
-      {pageType === "Document" ? (
-        <Box sx={{ display: "flex", gap: 2, mt: 2, mb: 3 }}>
-          <Box sx={{ width: "300px" }}>
-            <FormControl fullWidth>
-              <InputLabel id="document-select-label-1">
-                Select Document 1
-              </InputLabel>
-              <Select
-                labelId="document-select-label-1"
-                id="document-select-1"
-                value={selectedModuleId}
-                label="Select Document 1"
-                onChange={(e) => setSelectedModuleId(e.target.value)}
-                MenuProps={{ sx: { zIndex: 9999 } }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {modules.map((mod) => (
-                  <MenuItem key={mod.moduleId} value={mod.moduleId}>
-                    {mod.moduleName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-          <Box sx={{ width: "300px" }}>
-            <FormControl fullWidth>
-              <InputLabel id="document-select-label-2">
-                Select Document 2
-              </InputLabel>
-              <Select
-                labelId="document-select-label-2"
-                id="document-select-2"
-                value={selectedDocument2}
-                label="Select Document 2"
-                onChange={(e) => setSelectedDocument2(e.target.value)}
-                MenuProps={{ sx: { zIndex: 9999 } }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {secondDropdownOptions.map((opt) => (
-                  <MenuItem key={opt.faId} value={opt.faName}>
-                    {opt.faName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        </Box>
-      ) : (
-        ["DocumentTemplate", "FunctionalArea"].includes(pageType) && (
-          <Box sx={{ mt: 2, mb: 3, width: "300px" }}>
-            <FormControl fullWidth>
-              <InputLabel id="document-select-label">
-                Select Document
-              </InputLabel>
-              <Select
-                labelId="document-select-label"
-                id="document-select"
-                value={selectedDocument}
-                label="Select Document"
-                onChange={handleDocumentSelectChange}
-                MenuProps={{ sx: { zIndex: 9999 } }}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {(pageType === "FunctionalArea"
-                  ? functionalAreas
-                  : docNames
-                ).map((name) => (
-                  <MenuItem key={name} value={name}>
-                    {name}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Box>
-        )
-      )}
+
+      <Box sx={{ mt: 2, mb: 3, width: "300px" }}>
+        <FormControl fullWidth>
+          <InputLabel id="document-select-label">Select Document</InputLabel>
+          <Select
+            labelId="document-select-label"
+            id="document-select"
+            value={selectedDocument}
+            label="Select Document"
+            onChange={handleDocumentSelectChange}
+            MenuProps={{ sx: { zIndex: 9999 } }}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {docNames.map((name) => (
+              <MenuItem key={name} value={name}>
+                {name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
       {renderDocumentFieldsTable()}
     </Box>

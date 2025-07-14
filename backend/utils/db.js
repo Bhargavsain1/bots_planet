@@ -7,13 +7,20 @@ const MAIN_DB_URI = `mongodb://localhost:27017/HOST`; // Your main DB name
 const TENANT_DB_HOST = "localhost"; // MongoDB host for tenant DBs
 const TENANT_DB_PORT = 27017; // MongoDB port for tenant DBs
 
+const MONGOOSEOPTIONS = {
+  maxPoolSize: 50, // Adjust based on your application's concurrency needs maxvalue is 100
+  minPoolSize: 10, // min value is 0
+  //serverSelectionTimeoutMS: 100000, // 30 seconds to find a server
+};
+
 // Map to store active tenant connections for reuse
 const tenantConnections = new Map(); // Key: tenantId, Value: mongoose.Connection instance
-
+const TENENT_MONGO_DB_URL =
+  "mongodb+srv://nagalakshmi:WZBhRw0U6reHhahI@cluster0.ovwoovc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 // 1. Connect to the Main Database (Default Mongoose Connection)
 const connectMainDB = async () => {
   try {
-    await mongoose.connect(MAIN_DB_URI);
+    await mongoose.connect(MAIN_DB_URI, MONGOOSEOPTIONS);
     console.log("Main MongoDB connected successfully!");
 
     // Optional: Listen for main connection events
@@ -36,7 +43,13 @@ const connectMainDB = async () => {
 // 2. Get or Create a Tenant Database Connection
 const getTenantConnection = async (tenantId) => {
   const tenantDbName = "T" + `${tenantId}`; // Example naming: tenant_user123_db
-  const tenantUri = `mongodb://${TENANT_DB_HOST}:${TENANT_DB_PORT}/${tenantDbName}`;
+  console.log("db connectio///n", TENENT_MONGO_DB_URL);
+  const randomPort = 28000 + Math.floor(Math.random() * 1000); // Simulate a unique port
+
+  const tenantUri = `mongodb://${TENANT_DB_HOST}:${randomPort}/${tenantDbName}`;
+
+  // TENENT_MONGO_DB_URL;
+  // ||
 
   // Check if connection already exists and is healthy
   if (tenantConnections.has(tenantId)) {

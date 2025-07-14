@@ -7,7 +7,7 @@ const botController = require("../controller/botTypeController");
 const loginController = require("../controller/loginController");
 const loginRateLimiter = require("../middileware/raeLimit");
 const functionalAreaontroller = require("../controller/functionalAreaController");
-const collectionController = require("../controller/collectionController");
+// const collectionController = require("../controller/collectionController");
 const moduleController = require("../controller/moduleController");
 const documentController = require("../controller/documentController");
 const documentTemplateController = require("../controller/documentTemplatecontroller");
@@ -21,13 +21,14 @@ router.get("/status", (req, res) => {
 
 router.post("/save_doc", saveDataBasedOnCollection.saveDataBasedOnCollection);
 router.get(
-  "/fetch_doc/:collectionName",
+  "/fetch_doc/:docName",
   fetchDataBasedOnCollection.getDataByCollection
 );
 router.put(
   "/update_doc/:id",
   updateDataBasedOnCollection.updateDataBasedOnCollection
 );
+router.get("/fetch/:docName", fetchDataBasedOnCollection.fetchDocRecords);
 //login api
 router.post("/users/register", userController.registerUser);
 router.post("/login", loginRateLimiter, loginController.loginUser);
@@ -54,10 +55,10 @@ router.get(
 );
 
 router.get("/bot_types", botController.getBotDetails);
-router.post(
-  "/collections/add-field",
-  collectionController.addNewFieldtoCollection
-);
+// router.post(
+//   "/collections/add-field",
+//   collectionController.addNewFieldtoCollection
+// );
 // document api
 router.get("/document_list", documentController.getDocumentList);
 router.post("/save_document", documentController.saveDocument);
@@ -78,7 +79,11 @@ router.get(
   documentTemplateController.getEachDocumentData
 );
 router.get(
-  "/get_document_by_collection/:collectionName",
+  "/get_document_by_docname/:docName",
   documentTemplateController.getDocumentByCollection
+);
+router.get(
+  "/document_template_list",
+  documentTemplateController.getDocumentTemplate
 );
 module.exports = router;

@@ -30,11 +30,11 @@ function toCamelCaseWithoutSpaces(str) {
 exports.updateDataBasedOnCollection = async (req, res) => {
   try {
     const { id } = req.params;
-    const { data, collectionName } = req.body;
+    const { data, docName } = req.body;
     console.log("req.body", req.body, id);
 
     let document = await Document.findOne({
-      collectionName: collectionName,
+      docName,
     });
 
     if (!document) {
@@ -71,7 +71,7 @@ exports.updateDataBasedOnCollection = async (req, res) => {
         delete data[fieldLabel];
       }
     }
-    dynamicCollection = getDynamicCollectionModel(collectionName);
+    dynamicCollection = getDynamicCollectionModel(document.collectionName);
     let updatedRecord = await dynamicCollection.findByIdAndUpdate(
       { _id: id },
       {
