@@ -55,7 +55,7 @@ exports.updateDataBasedOnCollection = async (req, res) => {
       if (data[fieldLabel] !== undefined && foreignDocument && displayList) {
         const testValue = data[fieldLabel]; // The value from the current requestData object
         let foreignDocumentValue = foreignDocument
-          .replace(/\s/g, "")
+          .replace(/ /g, "_")
           .toLowerCase();
         const DynamicModel = getDynamicCollectionModel(foreignDocumentValue);
         console.log("dynamicrecords", DynamicModel, displayList, testValue);
@@ -91,3 +91,4 @@ exports.updateDataBasedOnCollection = async (req, res) => {
     res.status(500).send("Internal server Error");
   }
 };
+exports.updateDropDown = async (req, res) => {};

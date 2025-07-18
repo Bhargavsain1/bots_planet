@@ -18,6 +18,9 @@ const botAssignmentSchema = new mongoose.Schema({
   userId: {
     type: Number,
   },
+  quantity: {
+    type: Number,
+  },
   created_at: {
     type: Date,
     default: new Date().toISOString(),

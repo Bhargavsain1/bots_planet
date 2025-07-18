@@ -12,7 +12,7 @@ function getDynamicCollectionModel(collectionName) {
   } else {
     // For arbitrary collections, use the generic schema.
     // Mongoose will create a collection with this name if it doesn't exist.
-    return mongoose.model(collectionName, genericDataSchema);
+    return mongoose.model(collectionName, genericDataSchema, collectionName);
   }
 }
 module.exports = { getDynamicCollectionModel };

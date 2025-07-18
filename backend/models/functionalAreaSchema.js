@@ -32,12 +32,9 @@ const functionalAreaSchema = new mongoose.Schema(
 );
 functionalAreaSchema.pre("save", async function (next) {
   if (this.isNew && !this.serialNumber) {
-    const nextSerial = await getNextSequence("functionalareas");
+    const nextSerial = await getNextSequence("functional_areas");
     this.faId = nextSerial;
   }
   next();
 });
-module.exports = mongoose.model(
-  "functionalareas",
-  functionalAreaSchema,
-);
+module.exports = mongoose.model("functional_areas", functionalAreaSchema);

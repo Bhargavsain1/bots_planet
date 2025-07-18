@@ -1,7 +1,8 @@
 const mongoose = require("mongoose");
 
 // --- Configuration for your Main Database ---
-const MAIN_DB_URI = `mongodb://localhost:27017/HOST`; // Your main DB name
+const MAIN_DB_URI =
+  "mongodb+srv://devuser:Hasman123@salesbotdatacluster.gsbt1qx.mongodb.net/planet";
 
 // --- Configuration for your Tenant Databases ---
 const TENANT_DB_HOST = "localhost"; // MongoDB host for tenant DBs
@@ -16,7 +17,8 @@ const MONGOOSEOPTIONS = {
 // Map to store active tenant connections for reuse
 const tenantConnections = new Map(); // Key: tenantId, Value: mongoose.Connection instance
 const TENENT_MONGO_DB_URL =
-  "mongodb+srv://nagalakshmi:WZBhRw0U6reHhahI@cluster0.ovwoovc.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+  "mongodb+srv://devuser:Hasman123@salesbotdatacluster.gsbt1qx.mongodb.net/";
+
 // 1. Connect to the Main Database (Default Mongoose Connection)
 const connectMainDB = async () => {
   try {
@@ -46,7 +48,7 @@ const getTenantConnection = async (tenantId) => {
   console.log("db connectio///n", TENENT_MONGO_DB_URL);
   const randomPort = 28000 + Math.floor(Math.random() * 1000); // Simulate a unique port
 
-  const tenantUri = `mongodb://${TENANT_DB_HOST}:${randomPort}/${tenantDbName}`;
+  const tenantUri = `${TENENT_MONGO_DB_URL}${tenantDbName}`;
 
   // TENENT_MONGO_DB_URL;
   // ||

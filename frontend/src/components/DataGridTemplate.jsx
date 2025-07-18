@@ -20,6 +20,7 @@ import {
 } from "@mui/material";
 import axios from "axios";
 import Autocomplete from "@mui/material/Autocomplete";
+import { parseTypedValue, isValidType } from "../utils/validateAndParse"; // adjust the path as needed
 
 const capitalize = (s) => {
   if (typeof s !== "string") return "";
@@ -265,65 +266,54 @@ const DataGridTemplate = ({
     setError(""); // Clear previous errors
 
     const newRowsToSubmit = [];
-    // Get field labels that are both displayable and updatable for validation
-    const updatableDisplayFieldLabels = fieldDefinitions
-      .filter((f) => f.displayFlag === "Y" && f.updatableFlag === "Y")
-      .map((f) => f.fieldLabel);
 
-    // Validate and collect only the filled newRows
+    const updatableDisplayFieldDefinitions = fieldDefinitions.filter(
+      (f) => f.displayFlag === "Y" && f.updatableFlag === "Y"
+    );
+
     for (let i = 0; i < newRows.length; i++) {
       const row = newRows[i];
       let isEmptyRow = true;
       const rowData = {};
 
-      fieldDefinitions.forEach((fieldDef) => {
-        if (fieldDef.displayFlag === "Y") {
-          // Use the value from the row, or the default value if the row's value is empty
-          // Check if the user has modified the field (i.e., it's not the default value and not empty)
-          const userEnteredValue = row[fieldDef.fieldLabel];
-          const hasUserEnteredData =
-            userEnteredValue !== undefined &&
-            userEnteredValue !== null &&
-            String(userEnteredValue).trim() !== "" &&
-            String(userEnteredValue) !== String(fieldDef.defaultValue);
+      for (const fieldDef of fieldDefinitions) {
+        const { fieldLabel, displayFlag, defaultValue, fieldType } = fieldDef;
 
-          rowData[fieldDef.fieldLabel] = hasUserEnteredData
-            ? userEnteredValue
-            : fieldDef.defaultValue !== undefined
-            ? fieldDef.defaultValue
-            : ""; // Fallback to empty string if no default
+        if (displayFlag === "Y") {
+          const rawValue = row[fieldLabel] ?? "";
+          const parsedValue = parseTypedValue(rawValue, fieldType);
+          const expectedType =
+            fieldType.charAt(0).toUpperCase() +
+            fieldType.slice(1).toLowerCase();
 
-          if (
-            rowData[fieldDef.fieldLabel] &&
-            String(rowData[fieldDef.fieldLabel]).trim() !== ""
-          ) {
+          // Validate only for required (updatable) fields
+          if (fieldDef.updatableFlag === "Y") {
+            const isValid = isValidType(parsedValue, expectedType);
+
+            if (!isValid) {
+              setError(
+                `Invalid value for "${fieldLabel}" in row ${
+                  tableData.length + i + 1
+                }. Expected type: "${expectedType}".`
+              );
+              setIsSubmitting(false);
+              return;
+            }
+          }
+
+          rowData[fieldLabel] = parsedValue;
+
+          if (String(rawValue).trim() !== "") {
             isEmptyRow = false;
           }
         }
-      });
+      }
 
       if (!isEmptyRow) {
-        for (const fieldLabel of updatableDisplayFieldLabels) {
-          // If a field is required (updatable) and still empty after considering default values,
-          // then show an error.
-          if (
-            !rowData[fieldLabel] ||
-            String(rowData[fieldLabel]).trim() === ""
-          ) {
-            setError(
-              `Please fill all required (updatable) fields in new row ${
-                tableData.length + i + 1
-              }.`
-            );
-            setIsSubmitting(false);
-            return;
-          }
-        }
         newRowsToSubmit.push(rowData);
       }
     }
 
-    // Check if there's any data to submit
     if (newRowsToSubmit.length === 0) {
       setError(
         "No new data to submit. Please add some data in the blank rows."
@@ -331,19 +321,21 @@ const DataGridTemplate = ({
       setIsSubmitting(false);
       return;
     }
+
     let data = {
       requestBody: newRowsToSubmit,
       docName: docName,
     };
-    console.log("collectionName", data);
+
     try {
       const response = await axios.post(postApiUrl, data);
-
       setNewRows([]);
+
       const updatedDataResponse = await axios.get(fetchActualData);
       const updatedDisplayFieldLabels = fieldDefinitions
         .filter((f) => f.displayFlag === "Y")
         .map((f) => f.fieldLabel);
+
       const updatedProcessedData = updatedDataResponse.data.map((item) => {
         const newItem = {};
         newItem._id = item._id;
@@ -355,6 +347,7 @@ const DataGridTemplate = ({
           id: item._id || `new-${Date.now() + Math.random()}`,
         };
       });
+
       setTableData(updatedProcessedData);
     } catch (apiError) {
       console.error("Error submitting new data:", apiError);

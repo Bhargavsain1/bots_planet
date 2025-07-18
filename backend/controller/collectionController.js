@@ -78,9 +78,14 @@ const addNewFieldtoCollection = async (fieldDefinitions) => {
         continue;
       }
       const db = mongoose.connection.db;
-      const collection = db.collection(document.collectionName);
+      const collection = db.collection(
+        document.docName.replace(/ /g, "_").toLowerCase() + "s"
+      );
+      console.log("collection", collection);
       console.log(
-        `Successfully identified collection: '${document.collectionName}' for document '${item.documentName}'.`
+        `Successfully identified collection: '${document.docName
+          .replace(/ /g, "_")
+          .toLowerCase()}' for document '${item.documentName}'.`
       );
       const defaultValue = getDefaultValue(item.fieldType);
       const fieldName = transformString(item.fieldLabel);
@@ -96,7 +101,11 @@ const addNewFieldtoCollection = async (fieldDefinitions) => {
       );
 
       console.log(
-        `Field '${fieldName}' added/updated in ${updateResult.modifiedCount} documents in collection '${document.collectionName}'.`
+        `Field '${fieldName}' added/updated in ${
+          updateResult.modifiedCount
+        } documents in collection '${document.docName
+          .replace(/ /g, "_")
+          .toLowerCase()}'.`
       );
       results.push({
         item: item,

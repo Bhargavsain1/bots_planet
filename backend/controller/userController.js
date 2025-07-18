@@ -84,7 +84,6 @@ exports.registerUser = async (req, res) => {
     let tenantConnection;
     const dbName = `${counter.lastDbId}`;
     tenantConnection = await getTenantConnection(dbName);
-    console.log("tenantConnection", tenantConnection);
     const dynamicUser = getDynamicUser(tenantConnection);
     console.log("dynamicuser", dynamicUser);
     let createdDynamicUser;
@@ -111,11 +110,13 @@ exports.registerUser = async (req, res) => {
           });
 
           const botList = await newBot.save();
-          let newDynamicAssignement = new dynamicAssignement({
+          const newDynamicAssignement = new dynamicAssignement({
             botId: botList.botId,
             botTypeId: bot.id,
+            quantity: bot.quantity,
+            botName: bot.name,
           });
-          const dd = newDynamicAssignement.save();
+          await newDynamicAssignement.save();
         });
       } catch (err) {
         console.log("err in seleted baots", err);

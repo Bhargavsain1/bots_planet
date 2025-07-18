@@ -56,4 +56,4 @@ const documentTemplateSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("templates", documentTemplateSchema);
+module.exports = mongoose.model("document_templates", documentTemplateSchema);

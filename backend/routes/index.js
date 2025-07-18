@@ -28,6 +28,7 @@ router.put(
   "/update_doc/:id",
   updateDataBasedOnCollection.updateDataBasedOnCollection
 );
+router.put('/update_drop_down',updateDataBasedOnCollection.updateDropDown)
 router.get("/fetch/:docName", fetchDataBasedOnCollection.fetchDocRecords);
 //login api
 router.post("/users/register", userController.registerUser);
