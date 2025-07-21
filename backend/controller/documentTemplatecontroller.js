@@ -115,6 +115,7 @@ exports.getDocumentByCollection = async (req, res) => {
     const documents = await documentTemplate
       .find({ docId: document._id })
       .lean();
+    console.log("documenttemplate", documents);
     res.status(200).json(documents);
   } catch (err) {
     console.error("Error fetching document data:", err);
@@ -125,6 +126,7 @@ exports.getDocumentByCollection = async (req, res) => {
 exports.getDocumentTemplate = async (req, res) => {
   try {
     const documentTemplateDataArray = await documentTemplate.find({});
+    console.log("data in doc templae", documentTemplateDataArray);
     if (documentTemplateDataArray) {
       res.status(404).send("Records are not found");
     }

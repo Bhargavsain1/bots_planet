@@ -4,6 +4,14 @@ const DocumentTemplate = require("../models/DocumentTemplateSchema");
 const {
   getDynamicCollectionModel,
 } = require("../utils/getDynamicCollectionModel");
+function formateData(name) {
+  let formatted = name.trim().toLowerCase().replace(/\s+/g, "_");
+  if (!formatted.endsWith("s")) {
+    formatted += "s";
+  }
+
+  return formatted;
+}
 
 function toCamelCaseWithoutSpaces(str) {
   // 1. Convert to lowercase and split by space
@@ -71,7 +79,7 @@ exports.updateDataBasedOnCollection = async (req, res) => {
         delete data[fieldLabel];
       }
     }
-    dynamicCollection = getDynamicCollectionModel(document.collectionName);
+    dynamicCollection = getDynamicCollectionModel(formateData(docName));
     let updatedRecord = await dynamicCollection.findByIdAndUpdate(
       { _id: id },
       {
