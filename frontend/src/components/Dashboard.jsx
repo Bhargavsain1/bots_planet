@@ -22,7 +22,6 @@ import IconButton from "@mui/material/IconButton";
 import SettingsIcon from "@mui/icons-material/Settings";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { DragDropContext } from "react-beautiful-dnd";
 
 const drawerWidth = 200;
 const Dashboard = () => {
@@ -118,7 +117,7 @@ const Dashboard = () => {
       console.log("datain subitem", response);
       setTaskbarContent(
         response.data.map((item) => ({
-          id: item._id || item.faId || item.docId,
+          id: item.id || item.faId || item.docId,
           name: item.name || item.docName || item.faName,
         }))
       );
@@ -129,152 +128,121 @@ const Dashboard = () => {
       setLoadingTaskbarContent(false);
     }
   }, []);
-  console.log("taskbarContent", taskbarContent);
 
   const handleSubItemClick = (itemName) => {
     console.log("itemmm name", itemName);
     setActiveSubComponent(itemName);
   };
-  const onDragEnd = async (result) => {
-    const { source, destination } = result;
-    if (!destination) return;
-
-    if (
-      source.droppableId === "taskbar" &&
-      destination.droppableId === "taskbar"
-    ) {
-      const reordered = Array.from(taskbarContent);
-      const [movedItem] = reordered.splice(source.index, 1);
-      reordered.splice(destination.index, 0, movedItem);
-
-      const unique = Array.from(
-        new Map(reordered.map((i) => [i.id, i])).values()
-      );
-      setTaskbarContent(unique);
-
-      try {
-        await axios.put("http://localhost:5000/api/update_drop_down", {
-          subItemId: selectedSubItemId,
-          order: unique.map((item) => item.id),
-        });
-      } catch (err) {
-        console.error("Failed to update order:", err);
-      }
-    }
-  };
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-      <Box sx={{ display: "flex" }}>
-        <CssBaseline />
+    <Box sx={{ display: "flex" }}>
+      <CssBaseline />
 
-        <AppBar
-          position="fixed"
-          sx={{
-            zIndex: (theme) => theme.zIndex.drawer + 1,
-            backgroundColor: "#F0F0F0",
-            border: "4px",
-          }}
-        >
-          <Toolbar>
-            <img
-              src="/hasmanlogo.png"
-              alt="Hasman"
-              style={{ height: "40px", marginRight: "10px" }}
-            />
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              sx={{ flexGrow: 1, color: "black" }}
-            ></Typography>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              <IconButton>
-                <NotificationsIcon sx={{ color: "darkblue" }} />
-              </IconButton>
-              <IconButton>
-                <SettingsIcon sx={{ color: "darkblue" }} />
-              </IconButton>
-              <IconButton>
-                <LogoutIcon sx={{ color: "darkblue" }} />
-              </IconButton>
-            </Box>
-          </Toolbar>
-        </AppBar>
-
-        {/* Sidebar Component */}
-        <Sidebar
-          modules={modules}
-          loadingModules={loadingModules}
-          errorModules={errorModules}
-          selectedModuleId={selectedModuleId}
-          onModuleClick={handleModuleClick}
-          subItems={subItems}
-          loadingSubItems={loadingSubItems}
-          errorSubItems={errorSubItems}
-          selectedSubItemId={selectedSubItemId}
-          onSubItemSelect={handleSubItemSelect}
-          drawerWidth={drawerWidth}
-        />
-
-        {/* Main Content Area (Taskbar) */}
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            // p: 3,
-            pr: 2,
-            width: `calc(100% - ${drawerWidth}px)`,
-            ml: `${drawerWidth}px`,
-            marginTop: "8px",
-            marginLeft: "10px",
-          }}
-        >
-          <Toolbar /> {/* Spacer for AppBar */}
-          {errorTaskbarContent && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {errorTaskbarContent}
-            </Alert>
-          )}
-          {loadingTaskbarContent ? (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                height: "50vh",
-              }}
-            >
-              <CircularProgress />
-              <Typography variant="h6" sx={{ ml: 2 }}>
-                Loading report details...
-              </Typography>
-            </Box>
-          ) : (
-            <ItemDetails
-              details={
-                taskbarContent
-                  ? taskbarContent.map((item) => ({
-                      name: item.name || item.docName || item.faName,
-                      id: item.id,
-                    }))
-                  : []
-              }
-              onSubItemClick={handleSubItemClick}
-            />
-          )}
-          <Box sx={{ p: 3 }}>
-            {activeSubComponent === null ? (
-              <Typography></Typography>
-            ) : activeSubComponent === "Document Templates" ? (
-              <DocumentTemplate />
-            ) : (
-              <Modules activeSubComponent={activeSubComponent} />
-            )}
+      <AppBar
+        position="fixed"
+        sx={{
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          backgroundColor: "#F0F0F0",
+          border: "4px",
+        }}
+      >
+        <Toolbar>
+          <img
+            src="/hasmanlogo.png"
+            alt="Hasman"
+            style={{ height: "40px", marginRight: "10px" }}
+          />
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ flexGrow: 1, color: "black" }}
+          ></Typography>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton>
+              <NotificationsIcon sx={{ color: "darkblue" }} />
+            </IconButton>
+            <IconButton>
+              <SettingsIcon sx={{ color: "darkblue" }} />
+            </IconButton>
+            <IconButton>
+              <LogoutIcon sx={{ color: "darkblue" }} />
+            </IconButton>
           </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* Sidebar Component */}
+      <Sidebar
+        modules={modules}
+        loadingModules={loadingModules}
+        errorModules={errorModules}
+        selectedModuleId={selectedModuleId}
+        onModuleClick={handleModuleClick}
+        subItems={subItems}
+        loadingSubItems={loadingSubItems}
+        errorSubItems={errorSubItems}
+        selectedSubItemId={selectedSubItemId}
+        onSubItemSelect={handleSubItemSelect}
+        drawerWidth={drawerWidth}
+      />
+
+      {/* Main Content Area (Taskbar) */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          // p: 3,
+          pr: 2,
+          width: `calc(100% - ${drawerWidth}px)`,
+          ml: `${drawerWidth}px`,
+          marginTop: "8px",
+          marginLeft: "10px",
+        }}
+      >
+        <Toolbar /> {/* Spacer for AppBar */}
+        {errorTaskbarContent && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {errorTaskbarContent}
+          </Alert>
+        )}
+        {loadingTaskbarContent ? (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "50vh",
+            }}
+          >
+            <CircularProgress />
+            <Typography variant="h6" sx={{ ml: 2 }}>
+              Loading report details...
+            </Typography>
+          </Box>
+        ) : (
+          <ItemDetails
+            details={
+              taskbarContent
+                ? taskbarContent.map((item) => ({
+                    name: item.name || item.docName || item.faName,
+                  }))
+                : []
+            }
+            onSubItemClick={handleSubItemClick}
+          />
+        )}
+        <Box sx={{ p: 3 }}>
+          {activeSubComponent === null ? (
+            <Typography></Typography>
+          ) : activeSubComponent === "Document Templates" ? (
+            <DocumentTemplate activeSubComponent={activeSubComponent} />
+          ) : (
+            <Modules activeSubComponent={activeSubComponent} />
+          )}
         </Box>
       </Box>
-    </DragDropContext>
+    </Box>
   );
 };
 
