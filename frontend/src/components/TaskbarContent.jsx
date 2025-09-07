@@ -4,7 +4,6 @@ import { Card, CardContent, Typography, Box, ListItem } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 function TaskbarContent({ itemDetails }) {
   const navigate = useNavigate();
-  console.log("items", itemDetails);
   if (!itemDetails) {
     return (
       <Typography

@@ -5,7 +5,7 @@ mongoose.Promise = global.Promise;
 const functionalAreaSchema = new mongoose.Schema(
   {
     moduleId: {
-      type: Number,
+      type: String,
     },
     faId: {
       type: Number,

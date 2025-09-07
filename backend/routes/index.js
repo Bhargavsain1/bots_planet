@@ -1,7 +1,7 @@
 const express = require("express");
 const app = express();
 const router = express.Router();
-
+ 
 const userController = require("../controller/userController");
 const botController = require("../controller/botTypeController");
 const loginController = require("../controller/loginController");
@@ -17,25 +17,29 @@ router.get("/status", (req, res) => {
 });
 //login api
 router.post("/users/register", userController.registerUser);
-router.post("/login", loginController.loginUser);
+router.post("/login", loginRateLimiter, loginController.loginUser);
 
 //function area api
 router.get(
-  "/function_area/:id",
+  "/functional_area/:id",
   functionalAreaontroller.getFuntinalAreaDetails
 );
-router.get("/function_area", functionalAreaontroller.getAllFunctionAreas);
+router.get("/functional_area", functionalAreaontroller.getAllFunctionAreas);
 router.get(
-  "/each_funarea_documents/:faId",
+  "/each_funarea_documents/:id",
   functionalAreaontroller.getEachFuntinalAreaDetails
 );
-router.post("/save_function_area", functionalAreaontroller.saveFunctionArea);
+router.post("/save_functional_area", functionalAreaontroller.saveFunctionArea);
+router.put(
+  "/update_functional_area/:id",
+  functionalAreaontroller.updateFunctionArea
+);
 //--------------------------------------------------
 router.get(
   "/schema_deatils/:collectionName",
   functionalAreaontroller.schemaDeatils
 );
-
+ 
 router.get("/bot_types", botController.getBotDetails);
 router.post(
   "/collections/add-field",
@@ -44,10 +48,12 @@ router.post(
 // document api
 router.get("/document_list", documentController.getDocumentList);
 router.post("/save_document", documentController.saveDocument);
+router.put("/update_document/:id", documentController.updateDocumets);
 // modules api
 router.post("/save_module", moduleController.saveModule);
 router.get("/get_each_module/:moduleId", moduleController.getEachModule);
 router.get("/modules", moduleController.getModulesDetails);
+router.put("/update_module/:id", moduleController.updateModuleDetails);
 
 //document template api
 router.post(
@@ -63,3 +69,4 @@ router.get(
   documentTemplateController.getDocumentByCollection
 );
 module.exports = router;
+ 

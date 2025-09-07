@@ -16,10 +16,13 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Snackbar,
+  Alert as MuiAlert,
 } from "@mui/material";
+import { useSnackbar } from '../context/SnackbarContext';
 
-const DocumentTemplate = () => {
-  const [documentFields, setDocumentFields] = useState([]); 
+const DocumentTemplate = ({ pageType = "DocumentTemplate" }) => {
+  const [documentFields, setDocumentFields] = useState([]); // This will store data fetched from the backend
   const [newRows, setNewRows] = useState([
     {
       documentName: "",
@@ -28,24 +31,36 @@ const DocumentTemplate = () => {
       fieldType: "",
       fieldDescription: "",
       displayFlag: "",
-      updatebleFlag: "", // Changed from updateFlag
+      updatableFlag: "", // Changed from updateFlag
       foreignDocument: "",
       displayList: "",
       defaultValue: "Default",
       id: Date.now(),
     },
   ]);
-
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   const [docNames, setDocNames] = useState([]);
+  const [collectionNames, setCollectionNames] = useState([]);
+  const [functionalAreas, setFunctionalAreas] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [selectedModuleId, setSelectedModuleId] = useState("");
+  const [secondDropdownOptions, setSecondDropdownOptions] = useState([]);
   const [selectedDocument, setSelectedDocument] = useState("");
- 
-  // Function to fetch existing document fields (after submission)
+  const { showSnackbar } = useSnackbar();
+  // const [selectedDocument1, setSelectedDocument1] = useState("");
+  const [selectedDocument2, setSelectedDocument2] = useState("");
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState("success");
+
+  const [foreignDocFields, setForeignDocFields] = useState({});
+
   const fetchDocumentFields = async (docName) => {
     if (!docName) {
-      setDocumentFields([]); // Clear fields if no document is selected
+      setDocumentFields([]);
       return;
     }
     try {
@@ -65,39 +80,124 @@ const DocumentTemplate = () => {
   };
 
   useEffect(() => {
-    const fetchDocumentNames = async () => {
+    const fetchData = async () => {
+      setError("");
       try {
-        const response = await fetch("http://localhost:5000/api/document_list");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        if (pageType === "FunctionalArea") {
+          const response = await fetch(
+            "http://localhost:5000/api/functional_area"
+          );
+          if (!response.ok) {
+            throw new Error("Failed to fetch functional areas");
+          }
+          const data = await response.json();
+          setFunctionalAreas(data.map((item) => item.faName));
+        } else if (pageType === "Document") {
+          const [functionalAreasRes, modulesRes] = await Promise.all([
+            fetch("http://localhost:5000/api/function_area"),
+            fetch("http://localhost:5000/api/modules"),
+          ]);
+          if (!functionalAreasRes.ok) {
+            throw new Error("Failed to fetch functional areas");
+          }
+          if (!modulesRes.ok) {
+            throw new Error("Failed to fetch modules");
+          }
+          const functionalAreasData = await functionalAreasRes.json();
+          const modulesData = await modulesRes.json();
+          setFunctionalAreas(functionalAreasData.map((item) => item.faName));
+          setModules(modulesData.map((item) => item.moduleName));
+        } else if (pageType === "DocumentTemplate") {
+          const response = await fetch(
+            "http://localhost:5000/api/document_list"
+          );
+          if (!response.ok) {
+            throw new Error("Failed to fetch document list");
+          }
+          const data = await response.json();
+          setDocNames(data.map((item) => item.docName));
+          setCollectionNames(data.map((item) => item.collectionName));
         }
-        const data = await response.json();
-        const names = data.map((item) => item.docName);
-        setDocNames(names);
       } catch (error) {
-        console.error("Error fetching document list:", error);
-        setError("Failed to fetch document names.");
+        console.error("Error fetching data:", error);
+        setError(`Failed to fetch data for ${pageType}.`);
+        // Clear all data states on error
+        setDocNames([]);
+        setFunctionalAreas([]);
+        setModules([]);
       }
     };
 
-    fetchDocumentNames();
-  }, []);
+    fetchData();
+  }, [pageType]);
 
-  // Fetch document fields whenever selectedDocument changes
+  useEffect(() => {
+    if (pageType === "Document") {
+      fetch("http://localhost:5000/api/modules")
+        .then((res) => res.json())
+        .then((data) => setModules(data))
+        .catch(() => setModules([]));
+    }
+  }, [pageType]);
+
+  useEffect(() => {
+    if (!selectedModuleId) {
+      setSecondDropdownOptions([]);
+      return;
+    }
+    fetch(`http://localhost:5000/api/function_area/${selectedModuleId}`)
+      .then((res) => res.json())
+      .then((data) => setSecondDropdownOptions(data))
+      .catch(() => setSecondDropdownOptions([]));
+  }, [selectedModuleId]);
+
   useEffect(() => {
     fetchDocumentFields(selectedDocument);
   }, [selectedDocument]);
 
-  const handleNewRowChange = (e, rowIndex) => {
+  const handleNewRowChange = async (e, rowIndex) => {
     const { name, value } = e.target;
     setNewRows((prevRows) =>
       prevRows.map((row, index) =>
         index === rowIndex ? { ...row, [name]: value } : row
       )
     );
+
+    if (name === "foreignDocument") {
+      console.log("foreign document ", value, e.target.value);
+      if (value) {
+        try {
+          const response = await fetch(
+            `http://localhost:5000/api/get_document_by_collection/${value}`
+          );
+          if (!response.ok) throw new Error("Failed to fetch fields");
+          const data = await response.json();
+          const fieldNames = data.map((field) => field.fieldLabel);
+          setForeignDocFields((prev) => ({
+            ...prev,
+            [rowIndex]: fieldNames,
+          }));
+        } catch (err) {
+          setForeignDocFields((prev) => ({
+            ...prev,
+            [rowIndex]: [],
+          }));
+        }
+      } else {
+        setForeignDocFields((prev) => ({
+          ...prev,
+          [rowIndex]: [],
+        }));
+      }
+      setNewRows((prevRows) =>
+        prevRows.map((row, index) =>
+          index === rowIndex ? { ...row, displayList: "" } : row
+        )
+      );
+    }
   };
 
-  const addNewBlankRow = () => {
+  const addRow = () => {
     setNewRows((prevRows) => [
       ...prevRows,
       {
@@ -107,10 +207,9 @@ const DocumentTemplate = () => {
         fieldType: "",
         fieldDescription: "",
         displayFlag: "",
-        updatebleFlag: "", // Changed from updateFlag
+        updatableFlag: "", // Changed from updateFlag
         foreignDocument: "",
         displayList: "",
-
         defaultValue: "Default",
         id: Date.now(),
       },
@@ -124,7 +223,7 @@ const DocumentTemplate = () => {
       "fieldType",
       "fieldDescription",
       "displayFlag",
-      "updatebleFlag", // Changed from updateFlag
+      "updatableFlag", // Changed from updateFlag
     ];
     const validNewRows = [];
     const invalidRows = [];
@@ -148,24 +247,35 @@ const DocumentTemplate = () => {
 
       if (allFilled) {
         validNewRows.push(row);
+        console.log("valid rows", validNewRows);
       } else {
         invalidRows.push(index + 1);
       }
     });
 
     if (invalidRows.length > 0) {
-      setError(
+      setSnackbarMessage(
         `Please fill all required fields in new row(s): ${invalidRows.join(
           ", "
         )}.`
       );
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      setError("");
       setSuccessMessage("");
+      showSnackbar(`Please fill all required fields in new row(s): ${invalidRows.join(", ")}.`, 'error', 3000);
       return;
     }
 
     if (validNewRows.length === 0) {
-      setError("No new valid rows to submit. Please fill the fields to add.");
+      setSnackbarMessage(
+        "No new valid rows to submit. Please fill the fields to add."
+      );
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+      setError("");
       setSuccessMessage("");
+      showSnackbar('No new valid rows to submit. Please fill the fields to add.', 'error', 3000);
       return;
     }
 
@@ -182,6 +292,7 @@ const DocumentTemplate = () => {
           body: JSON.stringify(validNewRows),
         }
       );
+      console.log("response in use effect", response);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -190,7 +301,11 @@ const DocumentTemplate = () => {
       const result = await response.json();
       console.log("Submission successful:", result);
 
-      setSuccessMessage("Document fields submitted successfully!");
+      setSnackbarMessage("Document fields submitted successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      setSuccessMessage("");
+      showSnackbar('Document fields submitted successfully!', 'success', 3000);
       setNewRows([
         {
           documentName: selectedDocument,
@@ -199,7 +314,7 @@ const DocumentTemplate = () => {
           fieldType: "",
           fieldDescription: "",
           displayFlag: "",
-          updatebleFlag: "", // Changed from updateFlag
+          updatableFlag: "", // Changed from updateFlag
           foreignDocument: "",
           displayList: "",
           defaultValue: "Default",
@@ -209,8 +324,11 @@ const DocumentTemplate = () => {
       fetchDocumentFields(selectedDocument);
     } catch (apiError) {
       console.error("Error submitting document fields:", apiError);
-      setError("Failed to submit document fields. Please try again.");
+      setSnackbarMessage("Failed to submit document fields. Please try again.");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
       setSuccessMessage("");
+      showSnackbar('Failed to submit document fields.', 'error', 3000);
     }
   };
 
@@ -225,7 +343,7 @@ const DocumentTemplate = () => {
         fieldType: "",
         fieldDescription: "",
         displayFlag: "",
-        updatebleFlag: "", // Changed from updateFlag
+        updatableFlag: "", // Changed from updateFlag
         foreignDocument: "",
         displayList: "",
         defaultValue: "Default",
@@ -244,7 +362,7 @@ const DocumentTemplate = () => {
     { header: "Field Type", key: "fieldType" },
     { header: "Field Description", key: "fieldDescription" },
     { header: "Display Flag", key: "displayFlag" },
-    { header: "Updateable Flag", key: "updatebleFlag" }, // Changed header and key
+    { header: "Updatable Flag", key: "updatableFlag" }, // Changed header and key
     { header: "Foreign Document", key: "foreignDocument" },
     { header: "Display List", key: "displayList" },
     { header: "Default Value", key: "defaultValue" },
@@ -261,7 +379,7 @@ const DocumentTemplate = () => {
         }}
       >
         <Typography variant="h6">Existing Document Fields</Typography>
-        <Button variant="contained" onClick={addNewBlankRow}>
+        <Button variant="contained" onClick={addNewBlankRow} sx={{ borderRadius: '16px', px: 3, py: 1.2 }}>
           Add New Blank Row
         </Button>
       </Box>
@@ -364,14 +482,21 @@ const DocumentTemplate = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <TextField
+                  <Select
                     name="fieldType"
                     value={row.fieldType}
                     onChange={(e) => handleNewRowChange(e, rowIndex)}
                     size="small"
                     fullWidth
                     required
-                  />
+                    displayEmpty
+                  >
+                    {/*} <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>*/}
+                    <MenuItem value="String">String</MenuItem>
+                    <MenuItem value="Number">Number</MenuItem>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <TextField
@@ -384,44 +509,80 @@ const DocumentTemplate = () => {
                   />
                 </TableCell>
                 <TableCell>
-                  <TextField
+                  <Select
                     name="displayFlag"
                     value={row.displayFlag}
                     onChange={(e) => handleNewRowChange(e, rowIndex)}
                     size="small"
                     fullWidth
                     required
-                  />
+                    displayEmpty
+                  >
+                    {/*} <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>*/}
+                    <MenuItem value="Y">Y</MenuItem>
+                    <MenuItem value="N">N</MenuItem>
+                  </Select>
                 </TableCell>
                 <TableCell>
-                  <TextField
-                    name="updatebleFlag" // Changed name here
-                    value={row.updatebleFlag}
+                  <Select
+                    name="updatableFlag"
+                    value={row.updatableFlag}
                     onChange={(e) => handleNewRowChange(e, rowIndex)}
                     size="small"
                     fullWidth
                     required
-                  />
+                    displayEmpty
+                  >
+                    {/*<MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>*/}
+                    <MenuItem value="Y">Y</MenuItem>
+                    <MenuItem value="N">N</MenuItem>
+                  </Select>
                 </TableCell>
                 <TableCell>
-                  <TextField
+                  <Select
                     name="foreignDocument"
                     value={row.foreignDocument}
                     onChange={(e) => handleNewRowChange(e, rowIndex)}
+                    //onChange={(e)=> handleDisplayList(e, rowIndex)}
                     size="small"
                     fullWidth
                     required
-                  />
+                    displayEmpty
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    {collectionNames.map((name) => (
+                      <MenuItem key={name} value={name}>
+                        {name}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </TableCell>
                 <TableCell>
-                  <TextField
+                  <Select
                     name="displayList"
                     value={row.displayList}
                     onChange={(e) => handleNewRowChange(e, rowIndex)}
                     size="small"
                     fullWidth
                     required
-                  />
+                    displayEmpty
+                    disabled={!row.foreignDocument}
+                  >
+                    <MenuItem value="">
+                      <em>None</em>
+                    </MenuItem>
+                    {(foreignDocFields[rowIndex] || []).map((field) => (
+                      <MenuItem key={field} value={field}>
+                        {field}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </TableCell>
 
                 <TableCell>
@@ -433,7 +594,6 @@ const DocumentTemplate = () => {
                     fullWidth
                     required
                   />
-
                 </TableCell>
               </TableRow>
             ))}
@@ -480,7 +640,7 @@ const DocumentTemplate = () => {
           alignItems: "center",
         }}
       >
-        <Button variant="contained" onClick={handleSubmit}>
+        <Button variant="contained" onClick={handleSubmit} sx={{ borderRadius: '16px', px: 3, py: 1.2 }}>
           Submit
         </Button>
       </Box>
@@ -499,28 +659,89 @@ const DocumentTemplate = () => {
         Manage Document Fields
       </Typography>
 
-      <Box sx={{ mb: 3, width: "300px" }}>
-        <FormControl fullWidth>
-          <InputLabel id="document-select-label">Select Document</InputLabel>
-          <Select
-            labelId="document-select-label"
-            id="document-select"
-            value={selectedDocument}
-            label="Select Document"
-            onChange={handleDocumentSelectChange}
-            MenuProps={{ sx: { zIndex: 9999 } }}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem> 
-            {docNames.map((name) => (
-              <MenuItem key={name} value={name}>
-                {name}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      {/* Conditionally render two dropdowns for Document, one for others */}
+      {pageType === "Document" ? (
+        <Box sx={{ display: "flex", gap: 2, mt: 2, mb: 3 }}>
+          <Box sx={{ width: "300px" }}>
+            <FormControl fullWidth>
+              <InputLabel id="document-select-label-1">
+                Select Document 1
+              </InputLabel>
+              <Select
+                labelId="document-select-label-1"
+                id="document-select-1"
+                value={selectedModuleId}
+                label="Select Document 1"
+                onChange={(e) => setSelectedModuleId(e.target.value)}
+                MenuProps={{ sx: { zIndex: 9999 } }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {modules.map((mod) => (
+                  <MenuItem key={mod.moduleId} value={mod.moduleId}>
+                    {mod.moduleName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ width: "300px" }}>
+            <FormControl fullWidth>
+              <InputLabel id="document-select-label-2">
+                Select Document 2
+              </InputLabel>
+              <Select
+                labelId="document-select-label-2"
+                id="document-select-2"
+                value={selectedDocument2}
+                label="Select Document 2"
+                onChange={(e) => setSelectedDocument2(e.target.value)}
+                MenuProps={{ sx: { zIndex: 9999 } }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {secondDropdownOptions.map((opt) => (
+                  <MenuItem key={opt.faId} value={opt.faName}>
+                    {opt.faName}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+      ) : (
+        ["DocumentTemplate", "FunctionalArea"].includes(pageType) && (
+          <Box sx={{ mt: 2, mb: 3, width: "300px" }}>
+            <FormControl fullWidth>
+              <InputLabel id="document-select-label">
+                Select Document
+              </InputLabel>
+              <Select
+                labelId="document-select-label"
+                id="document-select"
+                value={selectedDocument}
+                label="Select Document"
+                onChange={handleDocumentSelectChange}
+                MenuProps={{ sx: { zIndex: 9999 } }}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {(pageType === "FunctionalArea"
+                  ? functionalAreas
+                  : docNames
+                ).map((name) => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        )
+      )}
 
       {renderDocumentFieldsTable()}
     </Box>

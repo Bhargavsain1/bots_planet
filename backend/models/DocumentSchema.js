@@ -5,10 +5,10 @@ mongoose.Promise = global.Promise;
 const documentSchema = new mongoose.Schema(
   {
     moduleId: {
-      type: Number,
+      type: String,
     },
     faId: {
-      type: Number,
+      type: String,
     },
     docId: {
       type: Number,

@@ -39,6 +39,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Login failed:", error);
       const errorMessage =
         error.response?.data?.message ||
+        error?.response?.data ||
         "Login failed. Please check your credentials and try again.";
       throw new Error(errorMessage);
     }

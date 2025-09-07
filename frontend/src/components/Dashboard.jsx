@@ -11,6 +11,8 @@ import {
   Button,
 } from "@mui/material";
 import Sidebar from "../components/Sidebar";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 import Modules from "./Modules";
 import Documents from "./Documents";
@@ -45,13 +47,16 @@ const Dashboard = () => {
   // State for active sub-component
   const [activeSubComponent, setActiveSubComponent] = useState(null);
 
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
     const getModules = async () => {
       setLoadingModules(true);
       setErrorModules(null);
       try {
         const data = await axios.get("http://localhost:5000/api/modules");
-
+        console.log("dataaa", data);
         setModules(data.data);
         setErrorModules(null);
       } catch (err) {
@@ -84,7 +89,7 @@ const Dashboard = () => {
       setActiveSubComponent(null);
       try {
         const data = await axios.get(
-          `http://localhost:5000/api/function_area/${moduleId}`
+          `http://localhost:5000/api/functional_area/${moduleId}`
         );
         console.log("data in subbitem", data);
         setSubItems(data.data);
@@ -130,7 +135,13 @@ const Dashboard = () => {
   }, []);
 
   const handleSubItemClick = (itemName) => {
+    console.log("itemmm name", itemName);
     setActiveSubComponent(itemName);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
   };
 
   return (
@@ -164,7 +175,7 @@ const Dashboard = () => {
             <IconButton>
               <SettingsIcon sx={{ color: "darkblue" }} />
             </IconButton>
-            <IconButton>
+            <IconButton onClick={handleLogout}>
               <LogoutIcon sx={{ color: "darkblue" }} />
             </IconButton>
           </Box>

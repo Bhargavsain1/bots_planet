@@ -10,11 +10,13 @@ import {
   Paper,
   IconButton,
   InputBase,
+  Snackbar,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import { Link as RouterLink, useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 import { useAuth } from "../context/AuthContext";
+import { useSnackbar } from '../context/SnackbarContext';
 
 // CAPTCHA generator function with mixed letters & digits
 const generateCaptcha = () => {
@@ -29,6 +31,7 @@ const generateCaptcha = () => {
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { showSnackbar } = useSnackbar();
 
   const [form, setForm] = useState({
     userId: "",
@@ -125,21 +128,25 @@ const Login = () => {
     setError("");
 
     if (!form.userId || !form.password) {
-      setError("Please fill in all fields.");
+      //setError("Please fill in all fields.");
+      showSnackbar('Please fill in all fields.', 'error', 3000);
       return;
     }
 
     if (!isCaptchaValid) {
-      setError("CAPTCHA does not match.");
+      //setError("CAPTCHA does not match.");
+      showSnackbar('CAPTCHA does not match.', 'error', 3000);
       return;
     }
 
     setLoading(true);
     try {
       await login(form.userId, form.password);
-      navigate("/dashboard");
+      showSnackbar('Welcome to Dashboard', 'success', 2000);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err) {
-      setError(err.message);
+      //setError(err.message);
+      showSnackbar(err.message, 'error', 3000);
     } finally {
       setLoading(false);
     }
